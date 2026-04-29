@@ -1,0 +1,158 @@
+@import 'tailwindcss';
+
+/* ---------------------------
+   THEME VARIABLES
+   --------------------------- */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* Warna Brand (Unpad Teal & Gold) */
+  --primary: #42929d;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f4b106;
+  --secondary-foreground: #171717;
+
+  --accent: #389ea9;
+  --accent-foreground: #ffffff;
+
+  --muted: #f0f0f0;
+  --muted-foreground: #64748b;
+
+  --warning: #ed910c;
+  --border: rgba(255, 255, 255, 0.5);
+
+  /* Glassmorphism Settings */
+  --card-bg: rgba(255, 255, 255, 0.75); /* Transparansi putih susu */
+  --card-border: rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+}
+
+/* ---------------------------
+   BODY & BACKGROUND SETUP
+   --------------------------- */
+body {
+  background-color: #f0f4f8; /* Fallback color */
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+
+  /* BACKGROUND IMAGE: Logo1.png */
+  background-image: linear-gradient(
+      rgba(255, 255, 255, 0.3),
+      rgba(255, 255, 255, 0.3)
+    ),
+    /* Overlay tipis agar tulisan terbaca */ url('/Logo1.png');
+
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* ---------------------------
+   GLASS CLASSES
+   --------------------------- */
+.glass-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  box-shadow: var(--glass-shadow);
+  border-radius: 20px; /* Radius lebih bulat untuk kesan modern */
+}
+/* ---------------------------
+   DARK MODE
+   --------------------------- */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+
+  --primary: #389ea9;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f4b106;
+  --secondary-foreground: #000000;
+
+  --muted: #1a1a1a;
+  --muted-foreground: #a1a1aa;
+
+  --border: #27272a;
+
+  /* Card / glass defaults (dark) */
+  --card-bg: rgba(10, 10, 10, 0.6);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------------------------
+   BODY & RESPONSIVE BACKGROUND
+   --------------------------- */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.25s ease, color 0.25s ease;
+
+  /* SETUP BACKGROUND RESPONSIVE */
+  background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
+    /* Overlay lebih gelap dikit agar text jelas */ url('/logo1.png');
+
+  background-position: center center;
+  background-size: cover; /* Memenuhi layar tanpa stretch gepeng */
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* KUNCI RESPONSIVE: Background diam saat scroll */
+
+  min-height: 100vh; /* Pastikan minimal setinggi layar */
+  margin: 0;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------------------------
+   GLASSMORPHISM UTILITIES
+   --------------------------- */
+.glass-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(12px) saturate(150%); /* Blur lebih kuat untuk kesan premium */
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  box-shadow: var(--glass-shadow);
+  border-radius: 16px;
+  transition: all 0.25s ease;
+}
+
+/* Accessibility */
+a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* Scrollbar halus */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Custom small helpers for scrollbar appearance (non-critical) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ring) transparent;
+}
+
+* {
+  -ms-overflow-x: hidden; /*IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Keep minimal resets used earlier removed to avoid conflicts */
