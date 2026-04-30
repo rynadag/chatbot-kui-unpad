@@ -5,6 +5,7 @@
 # - Stronger QA prompt: answer only from provided context, include SOURCES
 # - Trim conversation history before sending to LLM to reduce tokens
 # - Small performance tweaks (retriever k, deterministic LLM)
+# - Fixed: custom GeminiEmbeddings using google-genai SDK (v1 endpoint)
 # =======================================================================
 
 import os
@@ -15,15 +16,18 @@ import time
 import json
 import logging
 import threading
+import requests
 from contextlib import contextmanager
+from typing import List
 from pymongo import MongoClient
 from dotenv import load_dotenv
 from datetime import datetime
 
-# --- Langchain / Chroma imports (as in original)
+# --- Langchain / Chroma imports
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from langchain_chroma import Chroma
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_classic.chains.llm import LLMChain
@@ -39,14 +43,56 @@ MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
 MONGO_COLLECTION_NAME = "knowledgebase"
 
 PERSIST_DIR = "chroma_db"
-EMBED_MODEL = "models/text-embedding-004"
-LLM_MODEL = "gemini-flash-latest"
+EMBED_MODEL = "text-embedding-004"
+LLM_MODEL = "gemini-1.5-flash"
 
 if not GOOGLE_API_KEY:
     logger.warning("GOOGLE_API_KEY is not set - embeddings/LLM may fail to initialize")
 
+
+# =======================================================================
+# Custom Embeddings class using direct REST API v1 (avoids v1beta issue)
+# =======================================================================
+class GeminiEmbeddings(Embeddings):
+    def __init__(self, model: str, api_key: str):
+        self.model = model
+        self.api_key = api_key
+        self.base_url = f"https://generativelanguage.googleapis.com/v1/models/{model}:embedContent"
+        self.batch_url = f"https://generativelanguage.googleapis.com/v1/models/{model}:batchEmbedContents"
+
+    def _embed_single(self, text: str) -> List[float]:
+        payload = {"content": {"parts": [{"text": text}]}}
+        resp = requests.post(
+            self.base_url,
+            params={"key": self.api_key},
+            json=payload,
+            timeout=30
+        )
+        resp.raise_for_status()
+        return resp.json()["embedding"]["values"]
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        payload = {
+            "requests": [
+                {"model": f"models/{self.model}", "content": {"parts": [{"text": t}]}}
+                for t in texts
+            ]
+        }
+        resp = requests.post(
+            self.batch_url,
+            params={"key": self.api_key},
+            json=payload,
+            timeout=60
+        )
+        resp.raise_for_status()
+        return [e["values"] for e in resp.json()["embeddings"]]
+
+    def embed_query(self, text: str) -> List[float]:
+        return self._embed_single(text)
+
+
 try:
-    embeddings = GoogleGenerativeAIEmbeddings(model=EMBED_MODEL, google_api_key=GOOGLE_API_KEY)
+    embeddings = GeminiEmbeddings(model=EMBED_MODEL, api_key=GOOGLE_API_KEY)
     llm = ChatGoogleGenerativeAI(model=LLM_MODEL, temperature=0.3, google_api_key=GOOGLE_API_KEY)
     llm_strict = ChatGoogleGenerativeAI(model=LLM_MODEL, temperature=0.0, google_api_key=GOOGLE_API_KEY)
 except Exception as e:
@@ -85,7 +131,6 @@ def get_chroma_db():
         _ensure_chroma_loaded()
         yield _CHROMA_INSTANCE
     finally:
-        # keep instance alive (do not delete) for reuse to save startup time
         gc.collect()
 
 
@@ -104,32 +149,15 @@ def _reload_chroma_cache():
 # Helper: local pre-clean heuristics to reduce LLM tokens / noise
 # =======================================================================
 def pre_clean_local(raw: str) -> str:
-    """
-    Fast heuristics:
-      - Remove 'Page X of Y' / 'Halaman ...' footers
-      - Merge hyphenated line breaks
-      - Merge short wrapped lines when next line starts with lowercase
-      - Collapse excessive blank lines
-    This is intentionally conservative to avoid removing content.
-    """
     if not raw:
         return ""
 
     text = raw
-
-    # remove typical page headers/footers like "Page 1 of 5" or "Halaman 1 dari 5"
     text = re.sub(r"(Page|Halaman)\s*\d+\s*(of|dari)\s*\d+", "", text, flags=re.IGNORECASE)
-
-    # remove lines that are just page numbers
     text = re.sub(r"^\s*\d{1,4}\s*$", "", text, flags=re.MULTILINE)
-
-    # normalize newlines
     text = text.replace("\r\n", "\n").replace("\r", "\n")
-
-    # fix hyphenated line-breaks "exam-\nple" => "example"
     text = re.sub(r"(\w)-\n(\w)", r"\1\2", text)
 
-    # merge short lines with the next line if next starts with lowercase (heuristic)
     lines = text.split("\n")
     merged = []
     i = 0
@@ -149,8 +177,6 @@ def pre_clean_local(raw: str) -> str:
         i += 1
 
     text = "\n".join(merged)
-
-    # collapse many blank lines to max two
     text = re.sub(r"\n{3,}", "\n\n", text)
 
     return text.strip()
@@ -184,12 +210,6 @@ cleaning_chain = LLMChain(llm=llm_strict, prompt=cleaning_prompt) if llm_strict 
 
 
 def smart_clean_text(raw_text: str) -> str:
-    """
-    Two-phase cleaning:
-      1) pre_clean_local (fast)
-      2) LLM-based cleaning (chunked if needed)
-    Returns cleaned markdown text. If LLM not available, returns pre-cleaned text.
-    """
     if not raw_text:
         return ""
 
@@ -200,7 +220,6 @@ def smart_clean_text(raw_text: str) -> str:
         pre = raw_text
 
     if not cleaning_chain:
-        # no LLM available, return pre-clean
         return pre
 
     CHUNK_SIZE = 12000
@@ -208,7 +227,6 @@ def smart_clean_text(raw_text: str) -> str:
     if total_len <= CHUNK_SIZE:
         try:
             res = cleaning_chain.invoke({"raw_text": pre})
-            # defensive extraction of text
             if isinstance(res, dict):
                 return res.get("text") or res.get("content") or str(res)
             return getattr(res, "text", None) or getattr(res, "content", None) or str(res)
@@ -229,7 +247,6 @@ def smart_clean_text(raw_text: str) -> str:
             if not cleaned_chunk:
                 cleaned_chunk = ch
             cleaned_parts.append(cleaned_chunk)
-            # small sleep to be gentle on API (tunable)
             time.sleep(0.5)
         except Exception as e:
             logger.warning(f"Chunk {idx} LLM clean failed: {e}")
@@ -238,7 +255,7 @@ def smart_clean_text(raw_text: str) -> str:
 
 
 # =======================================================================
-# RERANK & QA (kept compatible but improved)
+# RERANK & QA
 # =======================================================================
 def rerank_with_gemini(query: str, docs: list, top_k: int = 3):
     if not docs:
@@ -334,20 +351,14 @@ def _trim_history(history: list, max_turns: int = 6):
     """Keep last max_turns user+assistant turns (pairs) to reduce tokens."""
     if not history:
         return []
-    # assume history is list of {"role": "...", "content": "..."} or similar
     return history[-max_turns:]
 
 
 def ask(question: str, history: list = []) -> str:
-    """
-    ask(question, history):
-      - history: list of dicts with keys like {'role': 'user'|'ai'|'assistant', 'content': '...'}
-    """
     if not llm or not embeddings:
         return "⚠️ AI System is initializing. Please wait a moment."
 
     try:
-        # trim history to recent few turns
         trimmed_history = _trim_history(history, max_turns=6)
         chat_history_str = ""
         for msg in trimmed_history:
@@ -355,14 +366,12 @@ def ask(question: str, history: list = []) -> str:
             content = msg.get("content") or msg.get("text") or ""
             chat_history_str += f"{role}: {content}\n"
 
-        # ensure chroma is loaded
         _ensure_chroma_loaded()
 
         with get_chroma_db() as db:
             if not db:
                 return "Knowledge database is not ready. Please perform 'Update RAG' in the admin panel."
 
-            # Slightly smaller k to speed up and avoid token explosion; reranker will pick top relevant
             retriever = db.as_retriever(search_kwargs={"k": 6})
             initial_docs = retriever.invoke(question)
 
@@ -378,14 +387,12 @@ def ask(question: str, history: list = []) -> str:
                     txt = re.sub(r"\s+", " ", d.page_content).strip()
                     topic = d.metadata.get("topic", "General")
                     used_topics.append(topic)
-                    # keep a short snippet and the topic as source label
                     snippets.append(f"[Source: {topic}]\n{txt}")
                 context_text = "\n\n".join(snippets)
 
-            chain = qa_prompt | llm_strict  # deterministic
+            chain = qa_prompt | llm_strict
             response = chain.invoke({"chat_history": chat_history_str, "context": context_text, "question": question})
 
-            # Defensive extraction
             if hasattr(response, 'content'):
                 content = str(response.content)
             elif isinstance(response, dict):
@@ -393,7 +400,6 @@ def ask(question: str, history: list = []) -> str:
             else:
                 content = str(response)
 
-            # Try to ensure we include SOURCES: if model omitted, append best-effort sources
             if "SOURCES:" not in content and used_topics:
                 sources_md = "\n\nSOURCES:\n" + "\n".join([f"- {t}" for t in used_topics])
                 content = content.strip() + sources_md
@@ -406,7 +412,7 @@ def ask(question: str, history: list = []) -> str:
 
 
 # =======================================================================
-# Chroma helpers & indexing (kept behavior but with logging)
+# Chroma helpers & indexing
 # =======================================================================
 def force_cleanup_chroma():
     gc.collect()
@@ -427,7 +433,6 @@ def load_from_mongo():
     count = 0
     for doc in cursor:
         combined_text = f"Topic: {doc.get('topic', '')}\nCategory: {doc.get('category', '')}\nContent:\n{doc.get('content', '')}"
-
         docs.append(
             Document(
                 page_content=combined_text,
@@ -473,7 +478,6 @@ def mainrag():
             persist_directory=PERSIST_DIR,
         )
 
-        # reload cached chroma instance after indexing so subsequent queries are fast
         _reload_chroma_cache()
 
         logger.info("✅ New Vector Database created successfully!")
