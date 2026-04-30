@@ -10,3 +10,4 @@ pdfplumber==0.11.4
 python-dotenv==1.2.1
 uvicorn==0.40.0
 requests>=2.32.0
+google-genai>=1.0.0
