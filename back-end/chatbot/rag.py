@@ -1,164 +1,194 @@
-# =======================================================================
-# FILE: rag.py
-# Improvements:
-# - Cached Chroma instance to avoid re-creating DB every request
-# - Stronger QA prompt: answer only from provided context, include SOURCES
-# - Trim conversation history before sending to LLM to reduce tokens
-# - Small performance tweaks (retriever k, deterministic LLM)
-# - Fixed: custom GeminiEmbeddings using google-genai SDK (v1 endpoint)
-# =======================================================================
-
 import os
 import re
 import shutil
 import gc
-import time
-import json
-import logging
 import threading
-import requests
+import logging
 from contextlib import contextmanager
-from typing import List
+from typing import List, Optional
+
 from pymongo import MongoClient
 from dotenv import load_dotenv
-from datetime import datetime
 
-# --- Langchain / Chroma imports
+# --- Langchain imports
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_chroma import Chroma
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
+from langchain_groq import ChatGroq
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_classic.chains.llm import LLMChain
+
+try:
+    from google import genai
+    from google.genai import types as genai_types
+except Exception:
+    genai = None
+    genai_types = None
 
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - [RAG] - %(message)s")
 logger = logging.getLogger(__name__)
 
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-MONGO_URI = os.getenv("MONGO_URI")
-MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
-MONGO_COLLECTION_NAME = "knowledgebase"
+# =======================================================================
+# CONFIG
+# =======================================================================
+GOOGLE_API_KEY   = os.getenv("GOOGLE_API_KEY")
+GROQ_API_KEY     = os.getenv("GROQ_API_KEY")
+MONGO_URI        = os.getenv("MONGO_URI")
+MONGO_DB_NAME    = os.getenv("MONGO_DB_NAME")
+MONGO_COLLECTION = "knowledgebase"
 
-PERSIST_DIR = "chroma_db"
-EMBED_MODEL = "text-embedding-004"
-LLM_MODEL = "gemini-1.5-flash"
+PERSIST_DIR  = "chroma_db"
+
+# Format model embeddings resmi untuk langchain-google-genai
+# NOTE: Use Gemini embedding models without the "models/" prefix.
+EMBED_MODEL  = os.getenv("EMBED_MODEL", "gemini-embedding-2")
+LLM_MODEL    = "llama-3.3-70b-versatile"
+
+RETRIEVER_K       = 8
+MMR_FETCH_K       = 20
+RERANK_FINAL_K    = 4
 
 if not GOOGLE_API_KEY:
-    logger.warning("GOOGLE_API_KEY is not set - embeddings/LLM may fail to initialize")
+    logger.warning("GOOGLE_API_KEY not set — embeddings will fail")
+if not GROQ_API_KEY:
+    logger.warning("GROQ_API_KEY not set — LLM will fail")
+
+# =======================================================================
+# GENAI EMBEDDINGS (v1beta)
+# =======================================================================
+def _normalize_model_name(name: str) -> str:
+    for prefix in ("models/", "publishers/google/models/"):
+        if name.startswith(prefix):
+            return name[len(prefix):]
+    return name
+
+
+def _resolve_embed_model(preferred: str, api_key: str) -> str:
+    if not genai or not genai_types:
+        return preferred
+    try:
+        client = genai.Client(
+            api_key=api_key,
+            http_options=genai_types.HttpOptions(api_version="v1beta"),
+        )
+        embed_models: list[str] = []
+        for m in client.models.list():
+            actions = m.supported_actions or []
+            if any(a.lower() == "embedcontent" for a in actions):
+                name = m.name or preferred
+                embed_models.append(_normalize_model_name(name))
+        if preferred in embed_models:
+            return preferred
+        if embed_models:
+            return embed_models[0]
+    except Exception as e:
+        logger.warning(f"Could not resolve embedding model list: {e}")
+    return preferred
 
 
 # =======================================================================
-# Custom Embeddings class using direct REST API v1 (avoids v1beta issue)
+# LLM & EMBEDDINGS INIT
 # =======================================================================
-class GeminiEmbeddings(Embeddings):
-    def __init__(self, model: str, api_key: str):
-        self.model = model
-        self.api_key = api_key
-        self.base_url = f"https://generativelanguage.googleapis.com/v1/models/{model}:embedContent"
-        self.batch_url = f"https://generativelanguage.googleapis.com/v1/models/{model}:batchEmbedContents"
-
-    def _embed_single(self, text: str) -> List[float]:
-        payload = {"content": {"parts": [{"text": text}]}}
-        resp = requests.post(
-            self.base_url,
-            params={"key": self.api_key},
-            json=payload,
-            timeout=30
+def _build_llm(temperature: float = 0.3) -> Optional[ChatGroq]:
+    if not GROQ_API_KEY:
+        return None
+    try:
+        return ChatGroq(
+            model=LLM_MODEL,
+            temperature=temperature,
+            api_key=GROQ_API_KEY,
+            max_tokens=2048,
         )
-        resp.raise_for_status()
-        return resp.json()["embedding"]["values"]
+    except Exception as e:
+        logger.error(f"Failed to init Groq LLM: {e}")
+        return None
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        payload = {
-            "requests": [
-                {"model": f"models/{self.model}", "content": {"parts": [{"text": t}]}}
-                for t in texts
-            ]
-        }
-        resp = requests.post(
-            self.batch_url,
-            params={"key": self.api_key},
-            json=payload,
-            timeout=60
+def _build_embeddings() -> Optional[Embeddings]:
+    if not GOOGLE_API_KEY:
+        return None
+    resolved_model = _resolve_embed_model(EMBED_MODEL, GOOGLE_API_KEY)
+    if resolved_model != EMBED_MODEL:
+        logger.info(f"Embedding model resolved: {resolved_model}")
+    try:
+        return GoogleGenerativeAIEmbeddings(
+            model=resolved_model,
+            google_api_key=GOOGLE_API_KEY,
         )
-        resp.raise_for_status()
-        return [e["values"] for e in resp.json()["embeddings"]]
-
-    def embed_query(self, text: str) -> List[float]:
-        return self._embed_single(text)
+    except Exception as e:
+        logger.error(f"Embeddings init error: {e}")
+        return None
 
 
 try:
-    embeddings = GeminiEmbeddings(model=EMBED_MODEL, api_key=GOOGLE_API_KEY)
-    llm = ChatGoogleGenerativeAI(model=LLM_MODEL, temperature=0.3, google_api_key=GOOGLE_API_KEY)
-    llm_strict = ChatGoogleGenerativeAI(model=LLM_MODEL, temperature=0.0, google_api_key=GOOGLE_API_KEY)
-except Exception as e:
-    logger.error(f"Error initializing models: {e}")
-    embeddings = None
-    llm = None
-    llm_strict = None
+    embeddings = _build_embeddings()
+    llm        = _build_llm(temperature=0.3)
+    llm_strict = _build_llm(temperature=0.0)
 
-# -------------------------------
-# Chroma cache (singleton) to avoid re-creating DB each request
-# -------------------------------
-_CHROMA_INSTANCE = None
+    if llm:
+        logger.info(f"LLM ready: {LLM_MODEL} via Groq")
+    if embeddings:
+        logger.info(f"Embeddings ready: {EMBED_MODEL}")
+except Exception as e:
+    logger.error(f"Model init error: {e}")
+    embeddings = llm = llm_strict = None
+
+# =======================================================================
+# CHROMA SINGLETON
+# =======================================================================
+_CHROMA_INSTANCE: Optional[Chroma] = None
 _CHROMA_LOCK = threading.Lock()
 
-
-def _ensure_chroma_loaded():
+def _ensure_chroma_loaded() -> None:
     global _CHROMA_INSTANCE
     if _CHROMA_INSTANCE is not None:
         return
     with _CHROMA_LOCK:
         if _CHROMA_INSTANCE is None and os.path.exists(PERSIST_DIR):
             try:
-                _CHROMA_INSTANCE = Chroma(persist_directory=PERSIST_DIR, embedding_function=embeddings)
+                _CHROMA_INSTANCE = Chroma(
+                    persist_directory=PERSIST_DIR,
+                    embedding_function=embeddings,
+                )
                 logger.info("Chroma DB loaded into cache.")
             except Exception as e:
-                logger.warning(f"Could not load Chroma DB into cache: {e}")
-
+                logger.warning(f"Could not load Chroma DB: {e}")
 
 @contextmanager
 def get_chroma_db():
-    """
-    Backwards-compatible context manager. Returns cached Chroma instance if available.
-    Yields None if not present.
-    """
     try:
         _ensure_chroma_loaded()
         yield _CHROMA_INSTANCE
     finally:
         gc.collect()
 
-
-def _reload_chroma_cache():
-    """Force reload cached chroma (used after indexing)."""
+def _reload_chroma_cache() -> None:
     global _CHROMA_INSTANCE
     with _CHROMA_LOCK:
         try:
-            _CHROMA_INSTANCE = Chroma(persist_directory=PERSIST_DIR, embedding_function=embeddings)
+            _CHROMA_INSTANCE = Chroma(
+                persist_directory=PERSIST_DIR,
+                embedding_function=embeddings,
+            )
             logger.info("Chroma cache reloaded.")
         except Exception as e:
-            logger.warning("Failed reloading Chroma cache: %s", e)
-
+            logger.warning(f"Failed reloading Chroma: {e}")
 
 # =======================================================================
-# Helper: local pre-clean heuristics to reduce LLM tokens / noise
+# TEXT CLEANING
 # =======================================================================
 def pre_clean_local(raw: str) -> str:
     if not raw:
         return ""
-
     text = raw
     text = re.sub(r"(Page|Halaman)\s*\d+\s*(of|dari)\s*\d+", "", text, flags=re.IGNORECASE)
     text = re.sub(r"^\s*\d{1,4}\s*$", "", text, flags=re.MULTILINE)
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     text = re.sub(r"(\w)-\n(\w)", r"\1\2", text)
 
-    lines = text.split("\n")
+    lines  = text.split("\n")
     merged = []
     i = 0
     while i < len(lines):
@@ -169,7 +199,12 @@ def pre_clean_local(raw: str) -> str:
             continue
         if i + 1 < len(lines):
             nxt = lines[i + 1].lstrip()
-            if len(line) < 80 and nxt and nxt[0].islower() and not re.match(r"^[#\-\dA-Z*`\[\]\*]", nxt):
+            if (
+                len(line) < 80
+                and nxt
+                and nxt[0].islower()
+                and not re.match(r"^[#\-\dA-Z*`\[\]\*]", nxt)
+            ):
                 merged.append(line + " " + nxt)
                 i += 2
                 continue
@@ -178,231 +213,140 @@ def pre_clean_local(raw: str) -> str:
 
     text = "\n".join(merged)
     text = re.sub(r"\n{3,}", "\n\n", text)
-
     return text.strip()
 
-
-# =======================================================================
-# SMART FORMATTING (LLM) - uses pre_clean_local first
-# =======================================================================
-cleaning_template = """
-You are a Specialized Document Formatter AI.
-Your task is to take RAW TEXT extracted from a PDF and restructure it into clean MARKDOWN.
-
-CRITICAL INSTRUCTION FOR TABLES:
-The input text MAY ALREADY CONTAIN Markdown Tables (starting with | ... |).
-**DO NOT DESTROY THEM.** You must preserve them or fix their alignment if broken.
-
-INSTRUCTIONS:
-1. Preserve Tables.
-2. Fix broken list items into proper Markdown lists.
-3. Use # for titles and ## for sections.
-4. Remove common headers/footers.
-5. Do NOT summarize. Keep all numbers, dates, names exactly as is.
-
-RAW TEXT:
-{raw_text}
-
-CLEAN MARKDOWN OUTPUT:
-"""
-cleaning_prompt = PromptTemplate(input_variables=["raw_text"], template=cleaning_template)
-cleaning_chain = LLMChain(llm=llm_strict, prompt=cleaning_prompt) if llm_strict else None
-
-
 def smart_clean_text(raw_text: str) -> str:
-    if not raw_text:
-        return ""
-
-    try:
-        pre = pre_clean_local(raw_text)
-    except Exception as e:
-        logger.warning(f"pre_clean_local error: {e}")
-        pre = raw_text
-
-    if not cleaning_chain:
-        return pre
-
-    CHUNK_SIZE = 12000
-    total_len = len(pre)
-    if total_len <= CHUNK_SIZE:
-        try:
-            res = cleaning_chain.invoke({"raw_text": pre})
-            if isinstance(res, dict):
-                return res.get("text") or res.get("content") or str(res)
-            return getattr(res, "text", None) or getattr(res, "content", None) or str(res)
-        except Exception as e:
-            logger.warning(f"LLM clean failed: {e}")
-            return pre
-
-    logger.info(f"[CLEAN] Long text ({total_len} chars) - chunking...")
-    chunks = [pre[i : i + CHUNK_SIZE] for i in range(0, total_len, CHUNK_SIZE)]
-    cleaned_parts = []
-    for idx, ch in enumerate(chunks):
-        try:
-            res = cleaning_chain.invoke({"raw_text": ch})
-            if isinstance(res, dict):
-                cleaned_chunk = res.get("text") or res.get("content") or ""
-            else:
-                cleaned_chunk = getattr(res, "text", None) or getattr(res, "content", None) or str(res)
-            if not cleaned_chunk:
-                cleaned_chunk = ch
-            cleaned_parts.append(cleaned_chunk)
-            time.sleep(0.5)
-        except Exception as e:
-            logger.warning(f"Chunk {idx} LLM clean failed: {e}")
-            cleaned_parts.append(ch)
-    return "\n\n".join(cleaned_parts)
-
+    """Called by app.py — local cleaning only (no LLM)."""
+    return pre_clean_local(raw_text)
 
 # =======================================================================
-# RERANK & QA
+# PROMPTS
 # =======================================================================
-def rerank_with_gemini(query: str, docs: list, top_k: int = 3):
-    if not docs:
-        return [], "QUERY"
+QA_TEMPLATE = """\
+You are the **International Student AI Assistant for Universitas Padjadjaran (UNPAD)**.
+Persona: professional, warm, concise, and academically accurate.
 
-    logger.info(f"⚖️ Reranking {len(docs)} candidates...")
+RULES:
+- Answer ONLY from the DOCUMENT CONTEXT below. Never hallucinate.
+- If the answer is not in the context, reply exactly:
+  "I don't have that information in the knowledge base. Please contact the KUI UNPAD office or ask an administrator to add the relevant information."
+- Always answer in **English**.
+- Use Markdown: bold, bullet points, tables where appropriate.
+- Keep answers focused and avoid unnecessary filler.
+- End every answer with a brief **Sources** section (bullet list of topic names used).
 
-    doc_options = ""
-    for i, d in enumerate(docs):
-        content = d.page_content[:450].replace("\n", " ")
-        doc_options += f"Doc ID {i}: {content}\n\n"
-
-    rerank_msg = f"""
-    You are an Intelligent Relevance Evaluator.
-    Analyze the USER QUESTION and the candidate DOCUMENT LIST.
-
-    USER QUESTION: "{query}"
-
-    DOCUMENT LIST:
-    {doc_options}
-
-    YOUR TASK:
-    1. **Check Intent:** CHAT (Greeting) vs QUERY (Information).
-    2. **Rerank (If QUERY):** Select document IDs relevant to the answer.
-
-    OUTPUT FORMAT:
-    - If CHAT: "INTENT:CHAT"
-    - If QUERY with valid docs: JSON list e.g., [0, 2]
-    - If QUERY but NO valid docs: "NONE"
-    """
-    try:
-        response = llm_strict.invoke(rerank_msg)
-        content = getattr(response, "content", None) or getattr(response, "text", None) or str(response)
-        content = content.strip()
-        logger.info(f"Rerank Output: {content}")
-
-        if "INTENT:CHAT" in content:
-            return [], "CHAT"
-        if "NONE" in content:
-            return [], "QUERY"
-
-        content = content.replace("```json", "").replace("```", "").strip()
-        try:
-            selected_indices = json.loads(content)
-        except Exception:
-            return docs[:top_k], "QUERY"
-
-        if not isinstance(selected_indices, list):
-            return docs[:top_k], "QUERY"
-
-        reranked_docs = []
-        for idx in selected_indices:
-            if isinstance(idx, int) and 0 <= idx < len(docs):
-                reranked_docs.append(docs[idx])
-        return reranked_docs[:top_k], "QUERY"
-    except Exception as e:
-        logger.warning(f"Rerank fallback: {e}")
-        return docs[:top_k], "QUERY"
-
-
-qa_template = """
-You are the **International Student AI Assistant for Universitas Padjadjaran (Unpad)**.
-Your persona is professional, warm, academic, and helpful.
-
-IMPORTANT:
-- ALWAYS ANSWER IN ENGLISH.
-- Answer ONLY using the DOCUMENT CONTEXT provided. Do NOT hallucinate.
-- If the answer cannot be found in the provided DOCUMENT CONTEXT, respond exactly with:
-  "I don't know based on the provided knowledge base. Please check the source documents or ask the administrator to add relevant information."
-- At the end of your answer, include a short SOURCES section listing the document topics you used (format as bullet list).
-- Use Markdown formatting. Use headings, bold, bullet points where helpful.
-- If you present tabular/structured data, prefer Markdown tables.
-
-INPUT:
 CHAT HISTORY:
 {chat_history}
 
 DOCUMENT CONTEXT:
 {context}
 
-USER QUESTION: {question}
+USER QUESTION:
+{question}
 
-ANSWER (MARKDOWN, ENGLISH). After the answer, include:
-
-SOURCES:
-- topic 1
-- topic 2
+ANSWER:
 """
-qa_prompt = ChatPromptTemplate.from_template(qa_template)
+qa_prompt = ChatPromptTemplate.from_template(QA_TEMPLATE)
 
+GREETING_TEMPLATE = """\
+You are the KUI UNPAD International Office assistant.
+Reply warmly and briefly in English to this greeting: {question}
+Mention you can help with campus info, scholarships, and academic procedures.
+"""
+greeting_prompt = ChatPromptTemplate.from_template(GREETING_TEMPLATE)
 
-def _trim_history(history: list, max_turns: int = 6):
-    """Keep last max_turns user+assistant turns (pairs) to reduce tokens."""
-    if not history:
-        return []
-    return history[-max_turns:]
+# =======================================================================
+# RETRIEVAL — MMR (no LLM reranking)
+# =======================================================================
+_GREETING_WORDS = {
+    "hi", "hello", "hey", "halo", "hei", "howdy", "greetings",
+    "good morning", "good afternoon", "good evening",
+    "selamat pagi", "selamat siang", "selamat malam",
+    "apa kabar", "how are you",
+}
 
+def _is_greeting(question: str) -> bool:
+    q = question.strip().lower().rstrip("!?.")
+    if q in _GREETING_WORDS:
+        return True
+    words = q.split()
+    return len(words) <= 3 and any(g in q for g in _GREETING_WORDS)
+
+def retrieve_docs(db: Chroma, query: str) -> List[Document]:
+    try:
+        retriever = db.as_retriever(
+            search_type="mmr",
+            search_kwargs={
+                "k":           RETRIEVER_K,
+                "fetch_k":     MMR_FETCH_K,
+                "lambda_mult": 0.6,
+            },
+        )
+        return retriever.invoke(query)
+    except Exception as e:
+        logger.warning(f"MMR retrieval failed, falling back to similarity: {e}")
+        return db.as_retriever(search_kwargs={"k": RETRIEVER_K}).invoke(query)
+
+# =======================================================================
+# ASK
+# =======================================================================
+def _trim_history(history: list, max_turns: int = 6) -> list:
+    return history[-max_turns:] if history else []
 
 def ask(question: str, history: list = []) -> str:
     if not llm or not embeddings:
         return "⚠️ AI System is initializing. Please wait a moment."
 
     try:
-        trimmed_history = _trim_history(history, max_turns=6)
+        trimmed          = _trim_history(history)
         chat_history_str = ""
-        for msg in trimmed_history:
-            role = "Human" if msg.get("role") == "user" else "AI"
+        for msg in trimmed:
+            role    = "Human" if msg.get("role") == "user" else "AI"
             content = msg.get("content") or msg.get("text") or ""
             chat_history_str += f"{role}: {content}\n"
+
+        # Short-circuit greetings
+        if _is_greeting(question):
+            chain    = greeting_prompt | llm
+            response = chain.invoke({"question": question})
+            return str(response.content) if hasattr(response, "content") else str(response)
 
         _ensure_chroma_loaded()
 
         with get_chroma_db() as db:
             if not db:
-                return "Knowledge database is not ready. Please perform 'Update RAG' in the admin panel."
+                return (
+                    "Knowledge database is not ready. "
+                    "Please perform 'Update RAG' in the admin panel."
+                )
 
-            retriever = db.as_retriever(search_kwargs={"k": 6})
-            initial_docs = retriever.invoke(question)
+            docs = retrieve_docs(db, question)[:RERANK_FINAL_K]
 
-            final_docs, intent = rerank_with_gemini(question, initial_docs, top_k=3)
+            context_parts = []
+            used_topics   = []
+            for d in docs:
+                txt   = re.sub(r"\s+", " ", d.page_content).strip()
+                topic = d.metadata.get("topic", "General")
+                used_topics.append(topic)
+                context_parts.append(f"[Source: {topic}]\n{txt}")
+            context_text = "\n\n".join(context_parts)
 
-            context_text = ""
-            used_topics = []
-            if intent == "QUERY" and not final_docs:
-                context_text = ""
-            elif final_docs:
-                snippets = []
-                for d in final_docs:
-                    txt = re.sub(r"\s+", " ", d.page_content).strip()
-                    topic = d.metadata.get("topic", "General")
-                    used_topics.append(topic)
-                    snippets.append(f"[Source: {topic}]\n{txt}")
-                context_text = "\n\n".join(snippets)
+            chain    = qa_prompt | llm_strict
+            response = chain.invoke({
+                "chat_history": chat_history_str,
+                "context":      context_text,
+                "question":     question,
+            })
 
-            chain = qa_prompt | llm_strict
-            response = chain.invoke({"chat_history": chat_history_str, "context": context_text, "question": question})
-
-            if hasattr(response, 'content'):
+            if hasattr(response, "content"):
                 content = str(response.content)
             elif isinstance(response, dict):
-                content = response.get('content') or response.get('text') or str(response)
+                content = response.get("content") or response.get("text") or str(response)
             else:
                 content = str(response)
 
-            if "SOURCES:" not in content and used_topics:
-                sources_md = "\n\nSOURCES:\n" + "\n".join([f"- {t}" for t in used_topics])
-                content = content.strip() + sources_md
+            if "Sources" not in content and "SOURCES" not in content and used_topics:
+                content = content.strip() + "\n\n**Sources:**\n" + "\n".join(f"- {t}" for t in used_topics)
 
             return content
 
@@ -410,67 +354,66 @@ def ask(question: str, history: list = []) -> str:
         logger.error(f"Ask Error: {e}")
         return f"System Error: {str(e)}"
 
-
 # =======================================================================
-# Chroma helpers & indexing
+# MONGO LOADER
 # =======================================================================
-def force_cleanup_chroma():
-    gc.collect()
-
-
-def load_from_mongo():
+def load_from_mongo() -> List[Document]:
     if not MONGO_URI or not MONGO_DB_NAME:
         logger.error("Mongo configuration missing")
         return []
 
-    client = MongoClient(MONGO_URI)
-    db = client[MONGO_DB_NAME]
-    collection = db[MONGO_COLLECTION_NAME]
+    client     = MongoClient(MONGO_URI, serverSelectionTimeoutMS=10_000)
+    db         = client[MONGO_DB_NAME]
+    collection = db[MONGO_COLLECTION]
 
-    cursor = collection.find({"status": "ACTIVE"})
-
-    docs = []
-    count = 0
-    for doc in cursor:
-        combined_text = f"Topic: {doc.get('topic', '')}\nCategory: {doc.get('category', '')}\nContent:\n{doc.get('content', '')}"
-        docs.append(
-            Document(
-                page_content=combined_text,
-                metadata={"id": str(doc.get("_id")), "topic": doc.get("topic", "No Topic"), "category": doc.get("category", "General")},
-            )
+    docs  = []
+    for doc in collection.find({"status": "ACTIVE"}):
+        text = (
+            f"Topic: {doc.get('topic', '')}\n"
+            f"Category: {doc.get('category', '')}\n"
+            f"Content:\n{doc.get('content', '')}"
         )
-        count += 1
+        docs.append(Document(
+            page_content=text,
+            metadata={
+                "id":       str(doc.get("_id")),
+                "topic":    doc.get("topic",    "No Topic"),
+                "category": doc.get("category", "General"),
+            },
+        ))
 
     try:
         collection.update_many({}, {"$set": {"is_sync": True}})
     except Exception as e:
-        logger.warning("Could not set is_sync flags: %s", e)
+        logger.warning(f"Could not set is_sync flags: {e}")
 
     client.close()
-    logger.info(f"✅ Loaded {count} ACTIVE documents from MongoDB.")
+    logger.info(f"Loaded {len(docs)} ACTIVE documents from MongoDB.")
     return docs
 
-
-def mainrag():
-    logger.info("🚀 Starting RAG Indexing Process...")
+# =======================================================================
+# INDEXING
+# =======================================================================
+def mainrag() -> str:
+    logger.info("Starting RAG Indexing Process...")
 
     try:
         if os.path.exists(PERSIST_DIR):
-            try:
-                shutil.rmtree(PERSIST_DIR, ignore_errors=True)
-                logger.info("🧹 Old Vector Database wiped.")
-            except Exception as e:
-                logger.error(f"⚠️ Failed to wipe DB: {e}")
+            shutil.rmtree(PERSIST_DIR, ignore_errors=True)
+            logger.info("Old Vector DB wiped.")
 
         docs = load_from_mongo()
         if not docs:
-            logger.warning("MongoDB is empty or no ACTIVE docs. ChromaDB will be empty.")
+            logger.warning("No ACTIVE docs found. ChromaDB will be empty.")
             return "Indexing Complete (No Data)"
 
-        logger.info(f"Elementing {len(docs)} documents...")
-
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200)
-        splits = text_splitter.split_documents(docs)
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1500,
+            chunk_overlap=300,
+            separators=["\n\n", "\n", ". ", " ", ""],
+        )
+        splits = splitter.split_documents(docs)
+        logger.info(f"Generated {len(splits)} chunks from {len(docs)} documents.")
 
         Chroma.from_documents(
             documents=splits,
@@ -479,22 +422,24 @@ def mainrag():
         )
 
         _reload_chroma_cache()
-
-        logger.info("✅ New Vector Database created successfully!")
+        logger.info("Vector Database created successfully!")
         return "Indexing Complete"
+
     except Exception as e:
         logger.error(f"Indexing failed: {e}")
         return f"Indexing Failed: {e}"
 
+# =======================================================================
+# UTILITIES
+# =======================================================================
+def force_cleanup_chroma() -> None:
+    gc.collect()
 
-def reset_memory():
-    force_cleanup_chroma()
+def reset_memory() -> None:
     global _CHROMA_INSTANCE
+    force_cleanup_chroma()
     with _CHROMA_LOCK:
         _CHROMA_INSTANCE = None
     if os.path.exists(PERSIST_DIR):
-        try:
-            shutil.rmtree(PERSIST_DIR, ignore_errors=True)
-            logger.info("✅ Vector Database cleared.")
-        except Exception as e:
-            logger.error(f"Failed to clear database: {e}")
+        shutil.rmtree(PERSIST_DIR, ignore_errors=True)
+        logger.info("Vector Database cleared.")
