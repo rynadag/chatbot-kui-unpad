@@ -14,6 +14,8 @@ import {
   AlertTriangle,
   Sun,
   Moon,
+  Languages,
+  FileText,
 } from 'lucide-react';
 
 // --- LIBRARY MARKDOWN & HTML PARSER ---
@@ -27,6 +29,13 @@ import rehypeRaw from 'rehype-raw';
 interface Message {
   sender: 'bot' | 'user';
   text: string;
+  sources?: ChatSource[];
+}
+
+interface ChatSource {
+  id?: string;
+  topic: string;
+  category?: string;
 }
 
 interface CodeBlockProps extends React.HTMLAttributes<HTMLElement> {
@@ -39,6 +48,8 @@ interface CategoryStructure {
   _id: string; 
   topics: string[]; 
 }
+
+type ChatLanguage = 'id' | 'en';
 
 // ------------------------------------------------------------
 // HELPERS
@@ -69,12 +80,91 @@ function safeJsonParse(s: string) {
 // ------------------------------------------------------------
 // INITIAL DATA
 // ------------------------------------------------------------
-const initialMessages: Message[] = [
-  {
-    sender: 'bot',
-    text: "Hello! I'm an Academic Assistant from the International Office. How can I help you with campus information, scholarships, or academic procedures?",
+const LANGUAGE_COPY: Record<ChatLanguage, {
+  initialMessage: string;
+  languageLabel: string;
+  languageTitle: string;
+  disconnected: string;
+  privacySavedOff: string;
+  verificationFailed: (message: string) => string;
+  topicsUserMessage: string;
+  topicsIntro: string;
+  topicsEmpty: string;
+  topicsHint: string;
+  topicsFetchFailed: string;
+  suggestion: string;
+  viewTopics: string;
+  inputPlaceholder: string;
+  captchaPlaceholder: string;
+  captchaMissing: string;
+  disclaimer: string;
+  sourceLabel: string;
+}> = {
+  id: {
+    initialMessage:
+      'Halo! Saya Asisten Akademik dari Kantor Internasional. Ada yang bisa saya bantu terkait informasi kampus, beasiswa, prosedur akademik, atau kebutuhan mahasiswa internasional?',
+    languageLabel: 'Bahasa',
+    languageTitle: 'Ganti bahasa respons',
+    disconnected: '⚠️ Koneksi ke server terputus. Silakan refresh halaman.',
+    privacySavedOff: 'Riwayat sesi ini tidak akan disimpan untuk pelatihan AI.',
+    verificationFailed: (message) => `⚠️ Verifikasi gagal: ${message}. Silakan refresh halaman.`,
+    topicsUserMessage: 'Tampilkan list topik',
+    topicsIntro: 'Berikut adalah daftar topik yang tersedia:\n\n',
+    topicsEmpty: 'Maaf, belum ada topik yang tersedia saat ini.',
+    topicsHint: '\n*Silakan ketik salah satu topik di atas untuk detail.*',
+    topicsFetchFailed: '⚠️ Maaf, gagal memuat daftar topik. Silakan coba lagi.',
+    suggestion: 'Bingung ingin bertanya apa? Lihat daftar topik yang tersedia.',
+    viewTopics: 'Lihat Topik',
+    inputPlaceholder: 'Ketik pertanyaan Anda di sini...',
+    captchaPlaceholder: 'Selesaikan verifikasi di atas...',
+    captchaMissing: '⚠️ Konfigurasi ReCAPTCHA belum tersedia.',
+    disclaimer: 'AI dapat membuat kesalahan. Verifikasi informasi penting sebelum digunakan.',
+    sourceLabel: 'Sumber',
   },
+  en: {
+    initialMessage:
+      "Hello! I'm an Academic Assistant from the International Office. How can I help you with campus information, scholarships, or academic procedures?",
+    languageLabel: 'Language',
+    languageTitle: 'Change response language',
+    disconnected: '⚠️ Connection to the server was lost. Please refresh the page.',
+    privacySavedOff: 'This session history will not be saved for AI training.',
+    verificationFailed: (message) => `⚠️ Verification failed: ${message}. Please refresh.`,
+    topicsUserMessage: 'Show available topics',
+    topicsIntro: 'Here are the available topics:\n\n',
+    topicsEmpty: 'Sorry, there are no topics available right now.',
+    topicsHint: '\n*Please type one of the topics above for more detail.*',
+    topicsFetchFailed: '⚠️ Sorry, failed to load topics. Please try again.',
+    suggestion: 'Not sure what to ask? Check out the available topics.',
+    viewTopics: 'View Topics',
+    inputPlaceholder: 'Type your question here...',
+    captchaPlaceholder: 'Complete the verification above...',
+    captchaMissing: '⚠️ ReCAPTCHA configuration is missing.',
+    disclaimer: 'AI can make mistakes. Please verify important information before using it.',
+    sourceLabel: 'Sources',
+  },
+};
+
+const getInitialMessages = (language: ChatLanguage): Message[] => [
+  { sender: 'bot', text: LANGUAGE_COPY[language].initialMessage },
 ];
+
+const initialMessages: Message[] = getInitialMessages('id');
+
+function normalizeSources(value: unknown): ChatSource[] {
+  if (!Array.isArray(value)) return [];
+  return value.reduce<ChatSource[]>((sources, item) => {
+    if (!item || typeof item !== 'object') return sources;
+    const record = item as Record<string, unknown>;
+    const topic = typeof record.topic === 'string' ? record.topic.trim() : '';
+    if (!topic) return sources;
+
+    const source: ChatSource = { topic };
+    if (typeof record.id === 'string') source.id = record.id;
+    if (typeof record.category === 'string') source.category = record.category;
+    sources.push(source);
+    return sources;
+  }, []);
+}
 
 export default function Chatbot() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -85,6 +175,7 @@ export default function Chatbot() {
   // Theme State
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [language, setLanguage] = useState<ChatLanguage>('id');
 
   // Copy Feedback State
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -118,6 +209,11 @@ export default function Chatbot() {
     setMounted(true);
     const savedTheme = localStorage.getItem('theme');
     const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const savedLanguage =
+      localStorage.getItem('chat-language') === 'en' ? 'en' : 'id';
+
+    setLanguage(savedLanguage);
+    setMessages(getInitialMessages(savedLanguage));
 
     if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
       setIsDarkMode(true);
@@ -127,6 +223,17 @@ export default function Chatbot() {
       document.documentElement.classList.remove('dark');
     }
   }, []);
+
+  const handleLanguageChange = (nextLanguage: ChatLanguage) => {
+    setLanguage(nextLanguage);
+    localStorage.setItem('chat-language', nextLanguage);
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0]?.sender === 'bot') {
+        return getInitialMessages(nextLanguage);
+      }
+      return prev;
+    });
+  };
 
   const toggleTheme = () => {
     if (isDarkMode) {
@@ -250,17 +357,18 @@ export default function Chatbot() {
         // FINAL REPLY event
         if (data.type === 'reply') {
           const idx = streamMapRef.current[data.request_id];
+          const sources = normalizeSources(data.sources);
           if (typeof idx === 'number') {
             setMessages((prev) => {
               const arr = [...prev];
-              arr[idx] = { sender: 'bot', text: data.reply || '' };
+              arr[idx] = { sender: 'bot', text: data.reply || '', sources };
               return arr;
             });
             delete streamMapRef.current[data.request_id];
           } else {
             setMessages((prev) => [
               ...prev,
-              { sender: 'bot', text: data.reply || '' },
+              { sender: 'bot', text: data.reply || '', sources },
             ]);
           }
           setLoading(false);
@@ -270,7 +378,10 @@ export default function Chatbot() {
 
         // Backwards compatible simple-reply from server (if any)
         if (data.Reply) {
-          setMessages((prev) => [...prev, { sender: 'bot', text: data.Reply }]);
+          setMessages((prev) => [
+            ...prev,
+            { sender: 'bot', text: data.Reply, sources: normalizeSources(data.sources) },
+          ]);
           setLoading(false);
           // Fungsi ini sekarang aman dipanggil kapan saja
           logChatToBackend('bot', data.Reply); 
@@ -406,7 +517,7 @@ export default function Chatbot() {
         ...prev,
         {
           sender: 'bot',
-          text: `⚠️ Verification failed: ${msg}. Please refresh.`,
+          text: LANGUAGE_COPY[language].verificationFailed(msg),
         },
       ]);
       setIsCaptchaVerified(false);
@@ -429,7 +540,7 @@ export default function Chatbot() {
         ...prev,
         {
           sender: 'bot',
-          text: 'This session history will not be saved for AI training.',
+          text: LANGUAGE_COPY[language].privacySavedOff,
         },
       ]);
     }
@@ -445,8 +556,9 @@ export default function Chatbot() {
   // ------------------------------------------------------------
   const handleRequestTopics = async () => {
     if (!isCaptchaVerified) return;
+    const copy = LANGUAGE_COPY[language];
     setShowTopicSuggestion(false);
-    const userMsg = 'Tampilkan list topik';
+    const userMsg = copy.topicsUserMessage;
     setMessages((prev) => [...prev, { sender: 'user', text: userMsg }]);
     setLoading(true);
 
@@ -456,9 +568,9 @@ export default function Chatbot() {
       const json = await res.json();
       const structure: CategoryStructure[] = json.data;
 
-      let botResponse = 'Berikut adalah daftar topik yang tersedia:\n\n';
+      let botResponse = copy.topicsIntro;
       if (structure.length === 0) {
-        botResponse = 'Maaf, belum ada topik yang tersedia saat ini.';
+        botResponse = copy.topicsEmpty;
       } else {
         structure.forEach((cat) => {
           botResponse += `### 📂 ${cat._id}\n`;
@@ -467,13 +579,13 @@ export default function Chatbot() {
           });
           botResponse += `\n`;
         });
-        botResponse += '\n*Silakan ketik salah satu topik di atas untuk detail.*';
+        botResponse += copy.topicsHint;
       }
       setMessages((prev) => [...prev, { sender: 'bot', text: botResponse }]);
     } catch {
       setMessages((prev) => [
         ...prev,
-        { sender: 'bot', text: '⚠️ Maaf, gagal memuat daftar topik. Silakan coba lagi.' },
+        { sender: 'bot', text: copy.topicsFetchFailed },
       ]);
     } finally {
       setLoading(false);
@@ -500,8 +612,7 @@ export default function Chatbot() {
     if (wsStatus !== 'OPEN' || !ws) {
       setMessages((prev) => [
         ...prev,
-        { sender: 'bot', text: '⚠️ Koneksi ke server terputus. Silakan refresh halaman.',
-        },
+        { sender: 'bot', text: LANGUAGE_COPY[language].disconnected },
       ]);
       return;
     }
@@ -518,6 +629,7 @@ export default function Chatbot() {
         message: userMsg,
         history: historyPayload,
         tab_id: tabIdRef.current,
+        language,
       };
       ws!.send(JSON.stringify(payload));
       logChatToBackend('user', userMsg);
@@ -545,6 +657,7 @@ export default function Chatbot() {
         message: lastUser.text,
         history: historyPayload,
         tab_id: tabIdRef.current,
+        language,
       };
       ws!.send(JSON.stringify(payload));
     } catch (e) {
@@ -699,16 +812,45 @@ export default function Chatbot() {
               </p>
             </div>
           </div>
-          <button
-            onClick={toggleTheme}
-            className="p-2.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all border border-transparent hover:border-border"
-          >
-            {isDarkMode ? (
-              <Sun className="w-5 h-5" style={{ color: 'var(--foreground)' }} />
-            ) : (
-              <Moon className="w-5 h-5" style={{ color: 'var(--foreground)' }} />
-            )}
-          </button>
+          <div className='flex items-center gap-2'>
+            <div
+              className='flex items-center gap-1 rounded-full border p-1'
+              style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
+              title={LANGUAGE_COPY[language].languageTitle}
+              aria-label={LANGUAGE_COPY[language].languageLabel}
+            >
+              <Languages className='w-4 h-4 opacity-70 ml-1' />
+              {(['id', 'en'] as ChatLanguage[]).map((item) => {
+                const isSelected = language === item;
+                return (
+                  <button
+                    key={item}
+                    type='button'
+                    onClick={() => handleLanguageChange(item)}
+                    className='min-w-9 px-2 py-1 rounded-full text-[11px] font-bold transition-colors'
+                    style={{
+                      background: isSelected ? 'var(--primary)' : 'transparent',
+                      color: isSelected ? 'var(--primary-foreground)' : 'var(--foreground)',
+                    }}
+                    aria-pressed={isSelected}
+                  >
+                    {item.toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={toggleTheme}
+              className="p-2.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all border border-transparent hover:border-border"
+              title={isDarkMode ? 'Light mode' : 'Dark mode'}
+            >
+              {isDarkMode ? (
+                <Sun className="w-5 h-5" style={{ color: 'var(--foreground)' }} />
+              ) : (
+                <Moon className="w-5 h-5" style={{ color: 'var(--foreground)' }} />
+              )}
+            </button>
+          </div>
         </header>
 
         {/* CHAT AREA */}
@@ -793,6 +935,40 @@ export default function Chatbot() {
                   </ReactMarkdown>
                 </div>
 
+                {msg.sender === 'bot' && msg.sources && msg.sources.length > 0 && (
+                  <div className='mt-2 ml-1 flex max-w-full flex-wrap items-center gap-2'>
+                    <span
+                      className='inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide opacity-70'
+                      style={{ color: 'var(--foreground)' }}
+                    >
+                      <FileText className='h-3 w-3' />
+                      {LANGUAGE_COPY[language].sourceLabel}
+                    </span>
+                    {msg.sources.slice(0, 4).map((source, sourceIndex) => (
+                      <span
+                        key={`${source.id || source.topic}-${source.category || 'general'}-${sourceIndex}`}
+                        className='inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium shadow-sm'
+                        style={{
+                          borderColor: 'var(--border)',
+                          background: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.72)',
+                          color: 'var(--foreground)',
+                        }}
+                        title={source.category ? `${source.topic} - ${source.category}` : source.topic}
+                      >
+                        <span className='max-w-[13rem] truncate'>{source.topic}</span>
+                        {source.category && source.category !== 'General' && (
+                          <span
+                            className='rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase opacity-75'
+                            style={{ background: 'var(--secondary)', color: 'var(--secondary-foreground)' }}
+                          >
+                            {source.category}
+                          </span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 {msg.sender === 'bot' && (
                   <div className='flex items-center gap-3 mt-2 ml-1'>
                     <button
@@ -853,7 +1029,7 @@ export default function Chatbot() {
             ) : (
               <div className='flex items-center gap-2 text-amber-600 text-sm bg-amber-50/50 px-4 py-2 rounded-lg border border-amber-200'>
                 <AlertTriangle className='w-4 h-4' />
-                <span>⚠️ ReCAPTCHA configuration is missing.</span>
+                <span>{LANGUAGE_COPY[language].captchaMissing}</span>
               </div>
             )}
           </div>
@@ -872,7 +1048,7 @@ export default function Chatbot() {
             <div className='flex items-center justify-between bg-black/5 dark:bg-white/5 px-4 py-2 rounded-lg mb-4 border border-transparent hover:border-border transition-colors'>
               <div className='flex items-center gap-2 text-xs sm:text-sm opacity-80' style={{ color: 'var(--foreground)' }}>
                 <BookOpen className='w-4 h-4 text-amber-500' />
-                <span>Not sure what to ask? Check out the available topics.</span>
+                <span>{LANGUAGE_COPY[language].suggestion}</span>
               </div>
               <div className='flex items-center gap-2'>
                 <button
@@ -880,7 +1056,7 @@ export default function Chatbot() {
                   className='text-xs font-bold px-3 py-1.5 rounded-md hover:opacity-80 transition-opacity'
                   style={{ background: 'var(--secondary)', color: 'var(--secondary-foreground)' }}
                 >
-                  View Topics
+                  {LANGUAGE_COPY[language].viewTopics}
                 </button>
                 <button onClick={() => setShowTopicSuggestion(false)} className='p-1 hover:bg-black/10 rounded-full transition-colors'>
                     <X className='w-4 h-4 opacity-50' />
@@ -894,8 +1070,8 @@ export default function Chatbot() {
               type='text'
               placeholder={
                 isCaptchaVerified
-                  ? 'Ketik pertanyaan Anda di sini...'
-                  : 'Selesaikan verifikasi di atas...'
+                  ? LANGUAGE_COPY[language].inputPlaceholder
+                  : LANGUAGE_COPY[language].captchaPlaceholder
               }
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -935,8 +1111,7 @@ export default function Chatbot() {
             className='text-[10px] text-center mt-3 opacity-60 font-medium'
             style={{ color: 'var(--foreground)' }}
           >
-            AI can make mistakes. Please verify important information before
-            using it.
+            {LANGUAGE_COPY[language].disclaimer}
           </p>
         </div>
       </div>
