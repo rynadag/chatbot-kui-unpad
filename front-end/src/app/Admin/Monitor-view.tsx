@@ -259,7 +259,7 @@ export default function MonitorView() {
     <div className='p-4 h-full flex flex-col'>
       <header className='mb-6 flex justify-between items-center bg-white/70 dark:bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/50 dark:border-white/10 shadow-sm'>
         <div>
-          <h1 className='text-2xl font-bold text-[#13484f] tracking-tight'>
+          <h1 className='text-2xl font-bold text-[#13484f] dark:text-gray-100 tracking-tight'>
             Live Monitor
           </h1>
           <p className='text-sm text-gray-600 dark:text-gray-300 mt-1'>
@@ -364,7 +364,7 @@ export default function MonitorView() {
                   } catch {}
                   setTimeout(() => window.location.reload(), 200);
                 }}
-                className='px-4 py-2 rounded-xl bg-[#13484f] text-white text-sm font-medium shadow-md hover:shadow-lg transition-all active:scale-95'
+                className='px-4 py-2 rounded-xl bg-[#13484f] dark:bg-primary text-white text-sm font-medium shadow-md hover:shadow-lg transition-all active:scale-95'
               >
                 Reconnect Monitor
               </button>
