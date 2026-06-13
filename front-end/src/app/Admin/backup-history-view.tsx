@@ -99,7 +99,7 @@ export default function BackupHistoryView({ onBack }: BackupHistoryViewProps) {
       {/* Header Section */}
       <header className='mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white/40 dark:bg-white/5 backdrop-blur-md p-6 rounded-xl border border-white/50 dark:border-white/10 shadow-sm gap-4'>
         <div>
-          <h1 className='text-2xl sm:text-3xl font-bold text-[#13484f] tracking-tight flex items-center gap-3'>
+          <h1 className='text-2xl sm:text-3xl font-bold text-[#13484f] dark:text-gray-100 tracking-tight flex items-center gap-3'>
             <History className="w-8 h-8 text-primary" />
             Riwayat Backup
           </h1>
@@ -138,7 +138,7 @@ export default function BackupHistoryView({ onBack }: BackupHistoryViewProps) {
         <div className="overflow-y-auto flex-1 p-3 space-y-2">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-3">
-              <Loader2 className="w-10 h-10 animate-spin text-[#13484f]" />
+              <Loader2 className="w-10 h-10 animate-spin text-[#13484f] dark:text-gray-100" />
               <p className="text-sm font-medium">Memuat riwayat backup...</p>
             </div>
           ) : backups.length > 0 ? (
