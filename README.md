@@ -18,17 +18,15 @@ Sistem ini dibangun dengan arsitektur *microservices* berkinerja tinggi yang mem
 
 ## 📸 Cuplikan Tampilan Aplikasi (Screenshots)
 
-*Catatan: Ganti placeholder gambar di bawah ini dengan tangkapan layar asli aplikasi yang disimpan di `front-end/public/`.*
-
 ### 1. Antarmuka Publik & Autentikasi
 | Chatbot Publik | Panel Login Admin |
 | :---: | :---: |
-| ![Chatbot UI](front-end/public/Logo1.png) <br> *Halaman interaksi pengguna dengan AI secara langsung.* | ![Login UI](front-end/public/Logo1.png) <br> *Sistem masuk eksklusif bagi administrator dengan proteksi tinggi.* |
+| ![Chatbot UI](./chatbot.png) <br> *Halaman interaksi pengguna dengan AI secara langsung.* | ![Login UI](./login-admin.png) <br> *Sistem masuk eksklusif bagi administrator dengan proteksi tinggi.* |
 
 ### 2. Panel Kontrol Administrator (Dashboard)
 | Manajemen Pengetahuan (RAG) | Pemantauan Sistem (Live Monitor) |
 | :---: | :---: |
-| ![Knowledge Base](front-end/public/Logo1.png) <br> *Injeksi data manual untuk melatih model Chatbot KUI.* | ![Live Monitor](front-end/public/Logo1.png) <br> *Pantau jumlah lalu lintas jaringan dan soket secara instan.* |
+| ![Knowledge Base](./knowledge-base.png) <br> *Injeksi data manual untuk melatih model Chatbot KUI.* | ![Live Monitor](./live-monitor.png) <br> *Pantau jumlah lalu lintas jaringan dan soket secara instan.* |
 
 ---
 
