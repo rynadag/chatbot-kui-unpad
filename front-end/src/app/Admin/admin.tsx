@@ -17,6 +17,8 @@ import {
   Menu,
   Monitor,
   History,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -177,12 +179,16 @@ const AdminSidebar = ({
   onLogout,
   isLoggingOut,
   userRole,
+  isDarkMode,
+  toggleTheme,
 }: {
   activeView: ActiveView;
   onNavClick: (view: ActiveView) => void;
   onLogout: () => void;
   isLoggingOut: boolean;
   userRole: string | null;
+  isDarkMode: boolean;
+  toggleTheme: () => void;
 }) => {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -234,7 +240,7 @@ const AdminSidebar = ({
       <div className='flex items-center h-20 px-6 border-b border-white/40 mb-2'>
         {isOpen ? (
           <div>
-            <h1 className='text-xl font-bold text-[#13484f] bg-gradient-to-r from-primary to-accent bg-clip-text  whitespace-nowrap'>
+            <h1 className='text-xl font-bold text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text whitespace-nowrap'>
               Admin Panel
             </h1>
             <p className='text-[10px] text-gray-500 font-medium tracking-wider uppercase opacity-80'>
@@ -244,15 +250,15 @@ const AdminSidebar = ({
         ) : (
           <button
             onClick={() => setIsOpen(true)}
-            className='mx-auto  hover:bg-black/5 rounded-lg transition-colors'
+            className='mx-auto hover:bg-black/5 rounded-lg transition-colors'
           >
-            <Menu className='w-6 h-6 text-gray-600' />
+            <Menu className='w-6 h-6 text-gray-600 dark:text-gray-300' />
           </button>
         )}
         {isOpen && (
           <button
             onClick={() => setIsOpen(false)}
-            className='ml-auto p-1 text-gray-400 hover:text-gray-600'
+            className='ml-auto p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
           >
             <ChevronsLeft className='w-5 h-5' />
           </button>
@@ -270,17 +276,17 @@ const AdminSidebar = ({
                       ${
                         activeView === item.view
                           ? 'bg-gradient-to-r from-primary to-accent text-white shadow-md'
-                          : 'text-gray-600 hover:bg-white/50 hover:text-gray-900'
+                          : 'text-gray-600 hover:bg-white/50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white'
                       }`}
           >
             <item.icon
               className={`w-5 h-5 flex-shrink-0 ${
-                activeView === item.view ? 'text-[#13484f]' : 'text-gray-400'
+                activeView === item.view ? 'text-white' : 'text-gray-400 dark:text-gray-400'
               }`}
             />
 
             {isOpen && (
-              <span className='whitespace-nowrap text-[#13484f]'>
+              <span className={`whitespace-nowrap ${activeView === item.view ? 'text-white font-bold' : ''}`}>
                 {item.label}
               </span>
             )}
@@ -288,8 +294,30 @@ const AdminSidebar = ({
         ))}
       </nav>
 
-      {/* Footer Section: Logout */}
-      <div className='p-4 border-t border-white/40 bg-white/20'>
+      {/* Footer Section: Theme Toggle & Logout */}
+      <div className='p-4 border-t border-white/40 bg-white/20 flex flex-col gap-2'>
+        {/* Toggle Theme Button */}
+        <button
+          onClick={toggleTheme}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium 
+                    text-gray-600 hover:bg-white/50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white
+                    transition-all
+                    ${!isOpen && 'justify-center'}`}
+          title={isDarkMode ? 'Mode Terang' : 'Mode Gelap'}
+        >
+          {isDarkMode ? (
+            <Sun className='w-5 h-5 text-amber-500 flex-shrink-0' />
+          ) : (
+            <Moon className='w-5 h-5 text-gray-400 flex-shrink-0' />
+          )}
+          {isOpen && (
+            <span className='whitespace-nowrap'>
+              {isDarkMode ? 'Mode Terang' : 'Mode Gelap'}
+            </span>
+          )}
+        </button>
+
+        {/* Logout Button */}
         <button
           onClick={onLogout}
           disabled={isLoggingOut}
@@ -304,7 +332,7 @@ const AdminSidebar = ({
             <LogOut className='w-5 h-5 flex-shrink-0' />
           )}
           {isOpen && (
-            <span className='whitespace-nowrap text-[#13484f] '>
+            <span className='whitespace-nowrap font-medium'>
               {isLoggingOut ? 'Keluar...' : 'Keluar'}
             </span>
           )}
@@ -498,12 +526,12 @@ const ChatHistoryView = () => {
   return (
     <div className='p-4 h-full flex flex-col'>
       {/* Header View */}
-      <header className='mb-6 flex justify-between items-center bg-white/40 backdrop-blur-md p-4 rounded-xl border border-white/50 shadow-sm'>
+      <header className='mb-6 flex justify-between items-center bg-white/40 dark:bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/50 dark:border-white/10 shadow-sm'>
         <div>
-          <h1 className='text-2xl font-bold text-[#13484f] tracking-tight'>
+          <h1 className='text-2xl font-bold text-[#13484f] dark:text-gray-100 tracking-tight'>
             Chat History
           </h1>
-          <p className='text-sm text-gray-600 mt-1'>
+          <p className='text-sm text-gray-600 dark:text-gray-300 mt-1'>
             Manajemen dan monitoring aktivitas chatbot.
           </p>
         </div>
@@ -520,8 +548,8 @@ const ChatHistoryView = () => {
       <section className='grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0'>
         {/* LIST PANEL (Glass Card) */}
         <div className='lg:col-span-1 glass-card flex flex-col overflow-hidden h-full'>
-          <div className='p-4 border-b border-white/40 bg-white/20'>
-            <h2 className='text-sm font-semibold flex items-center mb-3 gap-2 text-gray-700 uppercase tracking-wider opacity-80'>
+          <div className='p-4 border-b border-white/40 dark:border-white/10 bg-white/20 dark:bg-white/5'>
+            <h2 className='text-sm font-semibold flex items-center mb-3 gap-2 text-gray-700 dark:text-gray-300 uppercase tracking-wider opacity-80'>
               <MessageSquare className='w-4 h-4' /> Daftar Percakapan
             </h2>
             <div className='relative'>
@@ -531,7 +559,7 @@ const ChatHistoryView = () => {
                 placeholder='Cari ID percakapan...'
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className='w-full bg-white/60 text-gray-800 rounded-xl border border-white/50 pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all placeholder:text-gray-400'
+                className='w-full bg-white/60 dark:bg-white/10 text-gray-800 dark:text-gray-100 rounded-xl border border-white/50 dark:border-white/10 pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500'
               />
             </div>
           </div>
@@ -548,26 +576,34 @@ const ChatHistoryView = () => {
                   onClick={() => handleSelectConversation(conv._id)}
                   className={`group relative w-full rounded-xl transition-all border cursor-pointer ${
                     selectedConversation?._id === conv._id
-                      ? 'bg-white border-primary/30 shadow-md'
-                      : 'border-transparent hover:bg-white/40 bg-white/10'
+                      ? 'bg-white dark:bg-white/15 border-primary/30 shadow-md'
+                      : 'border-transparent hover:bg-white/40 dark:hover:bg-white/5 bg-white/10 dark:bg-white/5'
                   }`}
                 >
                   <div className='p-4 pr-10'>
                     <div className='flex justify-between items-start mb-1'>
-                      <p className='font-mono text-xs text-gray-600 font-semibold truncate w-24'>
+                      <p className={`font-mono text-xs font-semibold truncate w-24 ${
+                        selectedConversation?._id === conv._id
+                          ? 'text-gray-800 dark:text-gray-100'
+                          : 'text-gray-600 dark:text-gray-300'
+                      }`}>
                         {conv._id.substring(0, 8)}...
                       </p>
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                           conv.status === 'ACTIVE'
-                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                            : 'bg-gray-200 text-gray-600 border border-gray-300'
+                            ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30'
+                            : 'bg-gray-200 dark:bg-neutral-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-neutral-700/50'
                         }`}
                       >
                         {conv.status}
                       </span>
                     </div>
-                    <p className='text-xs text-gray-500'>
+                    <p className={`text-xs ${
+                      selectedConversation?._id === conv._id
+                        ? 'text-gray-600 dark:text-gray-300'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}>
                       {new Date(conv.createdAt).toLocaleString('id-ID', {
                         dateStyle: 'short',
                         timeStyle: 'short',
@@ -583,7 +619,7 @@ const ChatHistoryView = () => {
                       handleDeleteChat(conv._id);
                     }}
                     className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg 
-                               text-gray-400 hover:text-red-600 hover:bg-red-50 
+                               text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20
                                opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all
                                ${
                                  selectedConversation?._id === conv._id
@@ -612,23 +648,23 @@ const ChatHistoryView = () => {
             </div>
           ) : selectedConversation ? (
             <>
-              <header className='p-4 border-b border-white/40 bg-white/30 flex justify-between items-center backdrop-blur-sm'>
+              <header className='p-4 border-b border-white/40 dark:border-white/10 bg-white/30 dark:bg-white/5 flex justify-between items-center backdrop-blur-sm'>
                 <div>
-                  <h3 className='font-bold text-gray-800'>Detail Percakapan</h3>
-                  <p className='text-xs font-mono text-gray-500 mt-0.5'>
+                  <h3 className='font-bold text-gray-800 dark:text-gray-100'>Detail Percakapan</h3>
+                  <p className='text-xs font-mono text-gray-500 dark:text-gray-400 mt-0.5'>
                     ID: {selectedConversation._id}
                   </p>
                 </div>
                 <button
                   onClick={() => handleDeleteChat(selectedConversation._id)}
-                  className='flex items-center gap-2 bg-white/50 border border-red-100 text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors'
+                  className='flex items-center gap-2 bg-white/50 dark:bg-white/5 border border-red-100 dark:border-red-950 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-905/20 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors'
                 >
                   <Trash2 className='w-4 h-4' />
                   <span>Hapus</span>
                 </button>
               </header>
 
-              <div className='flex-1 overflow-y-auto p-6 flex flex-col gap-5 bg-white/20'>
+              <div className='flex-1 overflow-y-auto p-6 flex flex-col gap-5 bg-white/20 dark:bg-white/5'>
                 {selectedConversation.messages.length > 0 ? (
                   selectedConversation.messages.map((msg, index) => (
                     <div
@@ -643,7 +679,7 @@ const ChatHistoryView = () => {
                         className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm border border-white/50 ${
                           msg.sender === 'user'
                             ? 'bg-gradient-to-br from-primary to-accent text-white'
-                            : 'bg-white text-primary'
+                            : 'bg-white dark:bg-neutral-800 text-primary dark:text-gray-200'
                         }`}
                       >
                         {msg.sender === 'user' ? (
@@ -655,8 +691,8 @@ const ChatHistoryView = () => {
                       <div
                         className={`px-5 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
                           msg.sender === 'user'
-                            ? 'bg-[#13484f] text-white rounded-tr-none shadow-md'
-                            : 'bg-white/90 backdrop-blur-sm text-gray-800 rounded-tl-none border border-white/60'
+                            ? 'bg-[#13484f] dark:bg-primary/20 text-white dark:text-gray-100 rounded-tr-none shadow-md'
+                            : 'bg-white/90 dark:bg-white/10 backdrop-blur-sm text-gray-800 dark:text-gray-100 rounded-tl-none border border-white/60 dark:border-white/10'
                         }`}
                       >
                         {/* --- RENDERER MARKDOWN + HTML TABLE --- */}
@@ -671,31 +707,31 @@ const ChatHistoryView = () => {
                             components={{
                               // Table Styling untuk Admin View
                               table: ({ ...props }) => (
-                                <div className='overflow-x-auto my-3 border border-gray-200 rounded-lg bg-white/50'>
+                                <div className='overflow-x-auto my-3 border border-gray-200 dark:border-white/10 rounded-lg bg-white/50 dark:bg-white/5'>
                                   <table
-                                    className='min-w-full divide-y divide-gray-200 text-left text-xs'
+                                    className='min-w-full divide-y divide-gray-200 dark:divide-white/10 text-left text-xs'
                                     {...props}
                                   />
                                 </div>
                               ),
                               thead: ({ ...props }) => (
-                                <thead className='bg-gray-100/50' {...props} />
+                                <thead className='bg-gray-100/50 dark:bg-white/5' {...props} />
                               ),
                               th: ({ ...props }) => (
                                 <th
-                                  className='px-3 py-2 font-bold text-gray-700 border-b border-gray-100'
+                                  className='px-3 py-2 font-bold text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-white/10'
                                   {...props}
-                                />
+                                  />
                               ),
                               tbody: ({ ...props }) => (
                                 <tbody
-                                  className='divide-y divide-gray-100'
+                                  className='divide-y divide-gray-100 dark:divide-white/10'
                                   {...props}
                                 />
                               ),
                               tr: ({ ...props }) => (
                                 <tr
-                                  className='hover:bg-white/60 transition-colors'
+                                  className='hover:bg-white/60 dark:hover:bg-white/5 transition-colors'
                                   {...props}
                                 />
                               ),
@@ -733,7 +769,7 @@ const ChatHistoryView = () => {
                           className={`text-[10px] mt-2 opacity-70 ${
                             msg.sender === 'user'
                               ? 'text-blue-50'
-                              : 'text-gray-400'
+                              : 'text-gray-400 dark:text-gray-500'
                           }`}
                         >
                           {new Date(msg.createdAt).toLocaleTimeString([], {
@@ -754,13 +790,13 @@ const ChatHistoryView = () => {
             </>
           ) : (
             <div className='flex flex-col items-center justify-center h-full text-gray-500'>
-              <div className='p-6 bg-white/40 rounded-full mb-4 shadow-sm border border-white/60'>
+              <div className='p-6 bg-white/40 dark:bg-white/5 rounded-full mb-4 shadow-sm border border-white/60 dark:border-white/10'>
                 <MessageSquare className='w-12 h-12 text-primary/60' />
               </div>
-              <h3 className='text-lg font-bold text-gray-700'>
+              <h3 className='text-lg font-bold text-gray-700 dark:text-gray-300'>
                 Belum ada percakapan dipilih
               </h3>
-              <p className='text-sm mt-1'>
+              <p className='text-sm mt-1 text-gray-500 dark:text-gray-400'>
                 Pilih salah satu dari daftar di sebelah kiri.
               </p>
             </div>
@@ -807,15 +843,38 @@ export default function AdminDashboard() {
   const [activeView, setActiveView] = useState<ActiveView>('history');
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Real-time monitor events
   const [, setMonitorEvents] = useState<MonitorEvent[]>([]);
 
-  // 1. Ambil Role saat mount
+  // Initialize Theme and Role
   useEffect(() => {
     const storedRole = localStorage.getItem('role');
     setUserRole(storedRole);
+
+    const savedTheme = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+      setIsDarkMode(true);
+      document.documentElement.classList.add('dark');
+    } else {
+      setIsDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    }
   }, []);
+
+  const toggleTheme = () => {
+    if (isDarkMode) {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      setIsDarkMode(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      setIsDarkMode(true);
+    }
+  };
 
   // 2. Setup monitor websocket
   useEffect(() => {
@@ -923,6 +982,8 @@ export default function AdminDashboard() {
         onLogout={handleLogout}
         isLoggingOut={isLoggingOut}
         userRole={userRole}
+        isDarkMode={isDarkMode}
+        toggleTheme={toggleTheme}
       />
       {/* Main Content Area */}
       <main className='flex-1 overflow-hidden relative'>{renderView()}</main>

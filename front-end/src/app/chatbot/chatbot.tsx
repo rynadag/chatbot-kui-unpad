@@ -17,6 +17,7 @@ import {
   Languages,
   FileText,
   LogIn,
+  User,
 } from 'lucide-react';
 
 // --- LIBRARY MARKDOWN & HTML PARSER ---
@@ -725,6 +726,17 @@ export default function Chatbot() {
   // ------------------------------------------------------------
   return (
     <section className='min-h-screen flex items-center justify-center p-4 sm:p-6 font-sans transition-colors duration-300'>
+      <style dangerouslySetInnerHTML={{__html: `
+        iframe[title="reCAPTCHA"],
+        iframe[src*="recaptcha"],
+        .g-recaptcha iframe,
+        iframe {
+          border: 0px solid transparent !important;
+          border-width: 0px !important;
+          outline: none !important;
+          box-shadow: none !important;
+        }
+      `}} />
       {/* CONSENT MODAL */}
       {showConsentModal && (
         <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300'>
@@ -776,11 +788,11 @@ export default function Chatbot() {
           <div className='flex items-center gap-4'>
             <div className='relative'>
               <div
-                className='w-11 h-11 rounded-xl shadow-lg flex items-center justify-center overflow-hidden bg-white relative'
+                className='w-11 h-11 rounded-xl shadow-lg flex items-center justify-center overflow-hidden bg-white dark:bg-neutral-800 relative'
                 style={{ border: '1px solid var(--border)' }}
               >
                 <Image
-                  src='/Logo1.jpg'
+                  src='/Logo1.png'
                   alt='Bot Logo'
                   fill
                   sizes='44px'
@@ -869,19 +881,23 @@ export default function Chatbot() {
           {messages.map((msg, i) => (
             <div
               key={i}
-              className={`flex gap-4 group ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}
+              className={`flex items-start gap-4 group ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}
             >
               <div
-                className='shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-md border overflow-hidden relative bg-white'
+                className='shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-md border overflow-hidden relative bg-white dark:bg-neutral-800'
                 style={{ borderColor: 'var(--border)' }}
               >
-                <Image
-                  src={msg.sender === 'user' ? '/Logo.jpg' : '/Logo1.jpg'}
-                  alt={msg.sender}
-                  fill
-                  sizes='40px'
-                  className='object-contain p-0.5'
-                />
+                {msg.sender === 'user' ? (
+                  <User className='w-5 h-5 text-[#13484f] dark:text-gray-200' />
+                ) : (
+                  <Image
+                    src='/Logo1.png'
+                    alt='Bot Avatar'
+                    fill
+                    sizes='40px'
+                    className='object-contain p-0.5'
+                  />
+                )}
               </div>
               <div
                 className={`flex flex-col max-w-[85%] sm:max-w-[75%] ${
@@ -1008,9 +1024,9 @@ export default function Chatbot() {
 
           {loading && (
             <div className='flex gap-4 animate-pulse'>
-              <div className='w-10 h-10 rounded-full border flex items-center justify-center bg-white overflow-hidden relative' style={{ borderColor: 'var(--border)' }}>
+              <div className='w-10 h-10 rounded-full border flex items-center justify-center bg-white dark:bg-neutral-800 overflow-hidden relative' style={{ borderColor: 'var(--border)' }}>
                  <Image 
-                    src="/Logo1.jpg" 
+                    src="/Logo1.png" 
                     alt="Bot Loading" 
                     fill
                     sizes="40px"
@@ -1088,13 +1104,15 @@ export default function Chatbot() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               disabled={loading || showConsentModal || !isCaptchaVerified || wsStatus !== 'OPEN'}
-              className='w-full pl-6 pr-14 py-4 rounded-full outline-none text-sm transition-all shadow-inner focus:ring-2'
+              className='w-full pl-6 pr-14 py-4 rounded-full outline-none text-sm transition-all shadow-inner focus:ring-2 focus:ring-primary/50 focus:outline-none'
               style={
                 {
                   background: isDarkMode
                     ? 'rgba(0,0,0,0.3)'
                     : 'rgba(255,255,255,0.8)',
-                  border: '1px solid var(--border)',
+                  border: isDarkMode
+                    ? '1px solid rgba(255, 255, 255, 0.15)'
+                    : '1px solid rgba(0, 0, 0, 0.1)',
                   color: 'var(--foreground)',
                 } as React.CSSProperties
               }

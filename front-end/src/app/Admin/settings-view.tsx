@@ -81,9 +81,9 @@ export default function SettingsView() {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="w-full pl-10 pr-10 py-3 rounded-xl 
-                     bg-white/60 border border-white/50 
-                     text-gray-700 placeholder:text-gray-400
-                     focus:ring-2 focus:ring-primary/50 focus:border-primary/50 focus:bg-white/80
+                     bg-white/60 dark:bg-white/10 border border-white/50 dark:border-white/10 
+                     text-gray-700 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500
+                     focus:ring-2 focus:ring-primary/50 focus:border-primary/50 focus:bg-white/80 dark:focus:bg-white/20
                      outline-none transition-all duration-200 shadow-sm backdrop-blur-sm"
           placeholder={placeholder}
           required
@@ -111,20 +111,20 @@ export default function SettingsView() {
         <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-32 h-32 bg-secondary/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <header className="text-center mb-8 relative z-10">
-          <div className="mx-auto w-20 h-20 mb-4 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/20 border border-white/50 flex items-center justify-center shadow-inner">
+          <div className="mx-auto w-20 h-20 mb-4 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/20 border border-white/50 dark:border-white/10 flex items-center justify-center shadow-inner">
             <UserCog className="w-10 h-10 text-primary" />
           </div>
           <h1 className="text-2xl font-bold text-[#13484f] tracking-tight">
             Pengaturan Akun
           </h1>
-          <p className="text-sm text-gray-500 mt-2 max-w-xs mx-auto leading-relaxed">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-xs mx-auto leading-relaxed">
             Amankan akun Anda dengan memperbarui kata sandi secara berkala.
           </p>
         </header>
 
         <form onSubmit={handleSubmit} className="relative z-10">
           
-          <div className="bg-white/40 border border-white/50 rounded-2xl p-6 shadow-sm mb-6">
+          <div className="bg-white/40 dark:bg-white/5 border border-white/50 dark:border-white/10 rounded-2xl p-6 shadow-sm mb-6">
              <PasswordInput 
               label="Password Lama" 
               value={currentPassword} 
@@ -137,16 +137,16 @@ export default function SettingsView() {
 
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center" aria-hidden="true">
-              <div className="w-full border-t border-gray-300/50"></div>
+              <div className="w-full border-t border-gray-300/50 dark:border-white/10"></div>
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white/50 px-3 text-xs font-medium text-black-500 rounded-full backdrop-blur-sm">
+              <span className="bg-white/50 dark:bg-neutral-800 px-3 text-xs font-medium text-gray-500 dark:text-gray-400 rounded-full backdrop-blur-sm">
                 Password Baru
               </span>
             </div>
           </div>
 
-          <div className="space-y-4 text-black">
+          <div className="space-y-4 text-gray-900 dark:text-gray-100">
             <PasswordInput 
               label="Password Baru" 
               value={newPassword} 
@@ -172,8 +172,8 @@ export default function SettingsView() {
             className="w-full mt-8 flex items-center justify-center gap-2 py-3.5 px-4 
                        bg-gradient-to-r from-primary to-accent 
                        hover:shadow-lg hover:shadow-primary/20 hover:scale-[1.01] active:scale-[0.98]
-                       text-black rounded-xl font-semibold transition-all duration-200 
-                       disabled:opacity-70 disabled:cursor-not-allowed disabled:shadow-none border border-white/20"
+                       text-white rounded-xl font-semibold transition-all duration-200 
+                       disabled:opacity-70 disabled:cursor-not-allowed disabled:shadow-none border border-white/20 dark:border-white/10"
           >
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />

@@ -204,7 +204,7 @@ function MarkdownRenderer({ content }: { content: string }) {
           ),
           h2: ({ ...props }) => (
             <h2
-              className='text-xl font-bold mt-5 mb-3 border-b border-[#13484f]/30 pb-2 text-black'
+              className='text-xl font-bold mt-5 mb-3 border-b border-[#13484f]/30 pb-2 text-gray-900 dark:text-gray-100'
               {...props}
             />
           ),
@@ -395,7 +395,7 @@ const InputField = ({
           onChange={onChange}
           rows={rows}
           placeholder={placeholder}
-          className='w-full bg-white/5 border border-[#13484f]/40 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#13484f]/30 focus:border-transparent transition-colors font-mono text-black placeholder-gray-400'
+          className='w-full bg-white/5 dark:bg-white/10 border border-[#13484f]/40 dark:border-white/10 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#13484f]/30 focus:border-transparent transition-colors font-mono text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500'
         />
       ) : (
         <input
@@ -404,11 +404,11 @@ const InputField = ({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className='w-full bg-white/5 border border-[#13484f]/40 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#13484f]/30 focus:border-transparent transition-colors text-black placeholder-gray-400'
+          className='w-full bg-white/5 dark:bg-white/10 border border-[#13484f]/40 dark:border-white/10 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#13484f]/30 focus:border-transparent transition-colors text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500'
         />
       )
     ) : (
-      <div className='bg-white/5 p-4 rounded-lg text-sm leading-relaxed border border-[#13484f]/40 text-black overflow-x-auto backdrop-blur-sm'>
+      <div className='bg-white/5 dark:bg-white/10 p-4 rounded-lg text-sm leading-relaxed border border-[#13484f]/40 dark:border-white/10 text-gray-900 dark:text-gray-100 overflow-x-auto backdrop-blur-sm'>
         {useMarkdown ? (
           <Suspense
             fallback={<div className='text-sm text-[#13484f]'>{value}</div>}
@@ -416,7 +416,7 @@ const InputField = ({
             <MarkdownRenderer content={value} />
           </Suspense>
         ) : (
-          <span className='whitespace-pre-wrap text-black'>{value}</span>
+          <span className='whitespace-pre-wrap text-gray-900 dark:text-gray-100'>{value}</span>
         )}
       </div>
     )}
@@ -818,7 +818,7 @@ export default function KnowledgeView({ onBack }: KnowledgeViewProps) {
                 placeholder='Cari Judul, Kategori...'
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className='w-full bg-white/5 text-gray-100 rounded-lg border border-[#13484f]/90 pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/30 outline-none transition-colors'
+               className='w-full bg-white/5 dark:bg-white/10 text-gray-800 dark:text-gray-100 rounded-lg border border-[#13484f]/90 dark:border-white/10 pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/30 outline-none transition-colors placeholder-gray-400 dark:placeholder-gray-500'
                 disabled={mode !== 'view' || isLoading.rag}
               />
             </div>
@@ -1177,28 +1177,26 @@ const KnowledgeDetailPanel = React.memo(function KnowledgeDetailPanel({
                 placeholder='Pilih atau Ketik Kategori Baru...'
                 classNames={{
                   control: (state) =>
-                    // UBAH DISINI: Gunakan !bg-white/60 agar lebih solid (tidak transparan total)
-                    `!bg-white/60 !backdrop-blur-sm !border !border-[#13484f]/40 !rounded-lg !text-sm !shadow-none !p-1.5 ${
+                    `!bg-white/60 dark:!bg-white/10 !backdrop-blur-sm !border !border-[#13484f]/40 dark:!border-white/10 !rounded-lg !text-sm !shadow-none !p-1.5 ${
                       state.isFocused
-                        ? '!ring-2 !ring-[#13484f] !border-transparent'
+                        ? '!ring-2 !ring-primary/50 !border-transparent'
                         : ''
                     }`,
                   menu: () =>
-                    // UBAH DISINI: Gunakan !bg-white/95 dan !z-[9999] agar menu solid, terbaca, dan di layer paling atas
-                    '!bg-white/95 !backdrop-blur-md !border !border-[#13484f]/40 !rounded-lg !mt-1 !shadow-xl !z-[9999] relative',
+                    '!bg-white/95 dark:!bg-neutral-900 !backdrop-blur-md !border !border-[#13484f]/40 dark:!border-white/10 !rounded-lg !mt-1 !shadow-xl !z-[9999] relative',
                   option: (state) =>
                     `!cursor-pointer !text-sm !py-2 !px-3 ${
                       state.isFocused
-                        ? '!bg-[#13484f]/10 !text-[#13484f]'
-                        : '!bg-transparent !text-gray-900 hover:!bg-[#13484f]/5'
+                        ? '!bg-[#13484f]/10 dark:!bg-primary/20 !text-[#13484f] dark:!text-gray-200'
+                        : '!bg-transparent !text-gray-900 dark:!text-gray-200 hover:!bg-[#13484f]/5 dark:hover:!bg-white/5'
                     }`,
-                  singleValue: () => '!text-gray-900 !font-medium',
-                  input: () => '!text-gray-900',
-                  placeholder: () => '!text-gray-500',
+                  singleValue: () => '!text-gray-900 dark:!text-gray-100 !font-medium',
+                  input: () => '!text-gray-900 dark:!text-gray-100',
+                  placeholder: () => '!text-gray-500 dark:!text-gray-400',
                 }}
               />
             ) : (
-              <div className='bg-white/5 p-4 rounded-lg text-sm whitespace-pre-wrap leading-relaxed border border-[#13484f]/40 text-black'>
+              <div className='bg-white/5 dark:bg-white/10 p-4 rounded-lg text-sm whitespace-pre-wrap leading-relaxed border border-[#13484f]/40 dark:border-white/10 text-gray-900 dark:text-gray-100'>
                 {formData.category}
               </div>
             )}

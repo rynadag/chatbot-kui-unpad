@@ -30,9 +30,9 @@ const GlassInput = ({ className, ...props }: GlassInputProps) => (
   <input 
     {...props}
     className={`w-full p-2.5 rounded-xl 
-               bg-white/60 border border-white/50 
-               text-gray-700 placeholder:text-gray-400
-               focus:ring-2 focus:ring-primary/50 focus:border-primary/50 focus:bg-white/80
+               bg-white/60 dark:bg-white/10 border border-white/50 dark:border-white/10 
+               text-gray-700 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500
+               focus:ring-2 focus:ring-primary/50 focus:border-primary/50 focus:bg-white/80 dark:focus:bg-white/20
                outline-none transition-all duration-200 shadow-sm backdrop-blur-sm ${className || ''}`}
   />
 );
@@ -176,19 +176,19 @@ export default function ManageAdminView({ onBack }: ManageAdminViewProps) {
     <div className='p-4 sm:p-6 lg:p-8 h-full flex flex-col animate-in fade-in duration-300'>
       
       {/* Header View */}
-      <header className='mb-6 flex justify-between items-center bg-white/40 backdrop-blur-md p-4 rounded-xl border border-white/50 shadow-sm'>
+      <header className='mb-6 flex justify-between items-center bg-white/40 dark:bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/50 dark:border-white/10 shadow-sm'>
         <div>
           <h1 className='text-3xl font-bold text-[#13484f] tracking-tight'>
             Manajemen Admin
           </h1>
-          <p className='text-gray-600 mt-1 font-medium opacity-80'>
+          <p className='text-gray-600 dark:text-gray-300 mt-1 font-medium opacity-80'>
             Kelola akses administrator sistem.
           </p>
         </div>
         <button
           onClick={onBack}
           className='flex items-center gap-2 py-2 px-4 rounded-xl text-sm font-semibold text-[#13484f] 
-                     glass-card hover:bg-white/40 border-white/50 shadow-sm transition-all active:scale-95'
+                     glass-card hover:bg-white/40 dark:hover:bg-white/15 border-white/50 dark:border-white/10 shadow-sm transition-all active:scale-95'
         >
           <CornerDownLeft className='w-4 h-4' />
           <span>Kembali</span>
@@ -199,13 +199,13 @@ export default function ManageAdminView({ onBack }: ManageAdminViewProps) {
         
         {/* KOLOM KIRI: DAFTAR ADMIN (Glass Card) */}
         <div className='lg:col-span-1 glass-card h-full flex flex-col overflow-hidden'>
-          <div className='p-4 border-b border-white/40 bg-white/20 flex justify-between items-center backdrop-blur-sm'>
+          <div className='p-4 border-b border-white/40 dark:border-white/10 bg-white/20 dark:bg-white/5 flex justify-between items-center backdrop-blur-sm'>
             <h2 className='text-sm font-bold flex items-center gap-2 text-[#13484f] uppercase tracking-wider'>
               <Users className='w-4 h-4' /> Daftar Admin
             </h2>
             <button 
               onClick={handleCreateMode}
-              className='p-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition border border-primary/20'
+              className='p-1.5 bg-primary/10 dark:bg-primary/20 text-primary rounded-lg hover:bg-primary/20 dark:hover:bg-primary/30 transition border border-primary/20 dark:border-primary/30'
               title="Tambah Baru"
             >
               <UserPlus className='w-4 h-4' />
@@ -222,23 +222,23 @@ export default function ManageAdminView({ onBack }: ManageAdminViewProps) {
                   onClick={() => handleSelectAdmin(admin)}
                   className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between group ${
                     selectedAdmin?._id === admin._id 
-                      ? 'bg-gradient-to-r from-primary/10 to-accent/5 border-primary/30 shadow-sm' 
-                      : 'bg-white/30 border-transparent hover:bg-white/50'
+                      ? 'bg-gradient-to-r from-primary/10 to-accent/5 border-primary/30 dark:border-primary/50 shadow-sm' 
+                      : 'bg-white/30 dark:bg-white/5 border-transparent hover:bg-white/50 dark:hover:bg-white/10'
                   }`}
                 >
                   <div className='flex items-center gap-3'>
                     <div className={`p-2.5 rounded-full shadow-inner ${
                       admin.role === 'SUPER_ADMIN' 
-                        ? 'bg-gradient-to-br from-purple-100 to-purple-200 text-purple-700' 
-                        : 'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600'
+                        ? 'bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/30 dark:to-purple-800/20 text-purple-700 dark:text-purple-400' 
+                        : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-neutral-800 dark:to-neutral-700 text-gray-600 dark:text-gray-300'
                     }`}>
                       {admin.role === 'SUPER_ADMIN' ? <ShieldCheck className='w-4 h-4' /> : <Shield className='w-4 h-4' />}
                     </div>
                     <div>
-                      <p className={`text-sm font-bold ${selectedAdmin?._id === admin._id ? 'text-primary' : 'text-gray-800'}`}>
+                      <p className={`text-sm font-bold ${selectedAdmin?._id === admin._id ? 'text-primary' : 'text-gray-800 dark:text-gray-200'}`}>
                         {admin.username}
                       </p>
-                      <p className='text-[10px] text-gray-500 tracking-wide'>{admin.role.replace('_', ' ')}</p>
+                      <p className='text-[10px] text-gray-500 dark:text-gray-400 tracking-wide'>{admin.role.replace('_', ' ')}</p>
                     </div>
                   </div>
                   
@@ -261,12 +261,12 @@ export default function ManageAdminView({ onBack }: ManageAdminViewProps) {
             {/* Background Decor */}
             <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
 
-          <div className='mb-8 pb-4 border-b border-white/40 relative z-10'>
+          <div className='mb-8 pb-4 border-b border-white/40 dark:border-white/10 relative z-10'>
             <h2 className='text-xl font-bold text-[#13484f] flex items-center gap-2'>
               {mode === 'create' ? <UserPlus className='w-6 h-6 text-primary' /> : <Key className='w-6 h-6 text-amber-500' />}
               {mode === 'create' ? 'Buat Admin Baru' : `Ganti Password: ${selectedAdmin?.username}`}
             </h2>
-            <p className='text-sm text-gray-500 mt-1 leading-relaxed'>
+            <p className='text-sm text-gray-500 dark:text-gray-400 mt-1 leading-relaxed'>
               {mode === 'create' 
                 ? 'Tambahkan administrator baru untuk mengelola sistem dashboard kampus.' 
                 : 'Masukkan password baru yang aman untuk mereset akses admin ini.'}
@@ -350,12 +350,12 @@ export default function ManageAdminView({ onBack }: ManageAdminViewProps) {
               </div>
             </div>
 
-            <div className='flex gap-3 pt-6 border-t border-white/40 mt-4'>
+            <div className='flex gap-3 pt-6 border-t border-white/40 dark:border-white/10 mt-4'>
               {mode === 'edit' && (
                 <button 
                   type="button" 
                   onClick={handleCreateMode}
-                  className='px-5 py-2.5 text-sm font-medium text-gray-600 bg-white/50 rounded-xl hover:bg-white/80 border border-white/60 transition-all'
+                  className='px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white/50 dark:bg-white/5 rounded-xl hover:bg-white/80 dark:hover:bg-white/15 border border-white/60 dark:border-white/10 transition-all'
                 >
                   Batal
                 </button>
@@ -367,7 +367,7 @@ export default function ManageAdminView({ onBack }: ManageAdminViewProps) {
                   ${mode === 'create' 
                     ? 'bg-gradient-to-r from-primary to-accent hover:shadow-primary/20' 
                     : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:shadow-amber-500/20'}
-                  disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none`}
+                  disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none border border-white/20 dark:border-white/10`}
               >
                 {isSubmitting && <Loader2 className='w-4 h-4 animate-spin' />}
                 {mode === 'create' ? 'Buat Akun' : 'Simpan Password'}

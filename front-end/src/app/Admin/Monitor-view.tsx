@@ -257,12 +257,12 @@ export default function MonitorView() {
 
   return (
     <div className='p-4 h-full flex flex-col'>
-      <header className='mb-6 flex justify-between items-center bg-white/70 backdrop-blur-md p-4 rounded-xl border border-white/50 shadow-sm'>
+      <header className='mb-6 flex justify-between items-center bg-white/70 dark:bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/50 dark:border-white/10 shadow-sm'>
         <div>
           <h1 className='text-2xl font-bold text-[#13484f] tracking-tight'>
             Live Monitor
           </h1>
-          <p className='text-sm text-gray-600 mt-1'>
+          <p className='text-sm text-gray-600 dark:text-gray-300 mt-1'>
             Real-time overview of chatbot usage & events.
           </p>
         </div>
@@ -305,50 +305,50 @@ export default function MonitorView() {
 
       <div className='flex-1 overflow-y-auto space-y-6 pr-1'>
         <section className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-          <div className='p-5 rounded-xl border border-white/50 bg-white/70 backdrop-blur-sm shadow-sm'>
-            <p className='text-xs font-bold text-gray-500 uppercase tracking-wider'>
+          <div className='p-5 rounded-xl border border-white/50 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur-sm shadow-sm'>
+            <p className='text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
               Active Clients (tabs)
             </p>
-            <h3 className='text-3xl font-bold text-[#13484f] mt-1'>
+            <h3 className='text-3xl font-bold text-[#13484f] dark:text-gray-100 mt-1'>
               {activeCount}
             </h3>
-            <p className='text-xs text-gray-600 mt-3'>
+            <p className='text-xs text-gray-600 dark:text-gray-400 mt-3'>
               Unique open chatbot tabs (estimated)
             </p>
           </div>
 
-          <div className='p-5 rounded-xl border border-white/50 bg-white/70 backdrop-blur-sm shadow-sm'>
-            <p className='text-xs font-bold text-gray-500 uppercase tracking-wider'>
+          <div className='p-5 rounded-xl border border-white/50 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur-sm shadow-sm'>
+            <p className='text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
               Active Requests
             </p>
-            <h3 className='text-3xl font-bold text-[#13484f] mt-1'>
+            <h3 className='text-3xl font-bold text-[#13484f] dark:text-gray-100 mt-1'>
               {activeRequestsRef.current.size}
             </h3>
-            <p className='text-xs text-gray-600 mt-3'>
+            <p className='text-xs text-gray-600 dark:text-gray-400 mt-3'>
               Concurrent requests (in-flight)
             </p>
           </div>
 
-          <div className='p-5 rounded-xl border border-white/50 bg-white/70 backdrop-blur-sm shadow-sm'>
-            <p className='text-xs font-bold text-gray-500 uppercase tracking-wider'>
+          <div className='p-5 rounded-xl border border-white/50 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur-sm shadow-sm'>
+            <p className='text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
               Throughput (60s)
             </p>
-            <h3 className='text-3xl font-bold text-[#13484f] mt-1'>
+            <h3 className='text-3xl font-bold text-[#13484f] dark:text-gray-100 mt-1'>
               {requestsLast60s}
             </h3>
-            <p className='text-xs text-gray-600 mt-3'>
+            <p className='text-xs text-gray-600 dark:text-gray-400 mt-3'>
               New requests initiated in last minute
             </p>
           </div>
 
-          <div className='p-5 rounded-xl border border-white/50 bg-white/70 backdrop-blur-sm shadow-sm'>
-            <p className='text-xs font-bold text-gray-500 uppercase tracking-wider'>
+          <div className='p-5 rounded-xl border border-white/50 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur-sm shadow-sm'>
+            <p className='text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
               Buffered Events
             </p>
-            <h3 className='text-3xl font-bold text-[#13484f] mt-1'>
+            <h3 className='text-3xl font-bold text-[#13484f] dark:text-gray-100 mt-1'>
               {events.length}
             </h3>
-            <p className='text-xs text-gray-600 mt-3'>
+            <p className='text-xs text-gray-600 dark:text-gray-400 mt-3'>
               Live events captured in local buffer
             </p>
           </div>
@@ -372,13 +372,13 @@ export default function MonitorView() {
 
             <button
               onClick={clearEvents}
-              className='px-4 py-2 rounded-xl bg-white/70 border border-white/50 text-gray-700 text-sm font-medium hover:bg-white/70 transition-colors flex items-center gap-2'
+              className='px-4 py-2 rounded-xl bg-white/70 dark:bg-white/5 border border-white/50 dark:border-white/10 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-white/80 dark:hover:bg-white/10 transition-colors flex items-center gap-2'
             >
               <Trash2 className='w-4 h-4' /> <span>Clear Log</span>
             </button>
           </div>
 
-          <div className='text-xs font-mono text-gray-500 flex items-center gap-2 bg-white/70 px-3 py-1.5 rounded-lg border border-white/40'>
+          <div className='text-xs font-mono text-gray-500 dark:text-gray-400 flex items-center gap-2 bg-white/70 dark:bg-white/5 px-3 py-1.5 rounded-lg border border-white/40 dark:border-white/10'>
             <Clock className='w-3 h-3' /> {new Date().toLocaleTimeString()}
           </div>
         </div>
@@ -386,26 +386,26 @@ export default function MonitorView() {
         {/* Browser breakdown */}
         <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
           {Object.entries(browserCounts).map(([browser, count]) => (
-            <div key={browser} className='p-4 rounded-lg border bg-white/70'>
-              <div className='text-xs text-gray-500 uppercase font-semibold'>
+            <div key={browser} className='p-4 rounded-lg border border-white/50 dark:border-white/10 bg-white/70 dark:bg-white/5'>
+              <div className='text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold'>
                 {browser}
               </div>
-              <div className='text-2xl font-bold text-[#13484f] mt-1'>
+              <div className='text-2xl font-bold text-[#13484f] dark:text-gray-100 mt-1'>
                 {count}
               </div>
-              <div className='text-xs text-gray-600 mt-1'>
+              <div className='text-xs text-gray-600 dark:text-gray-400 mt-1'>
                 Open tabs using {browser}
               </div>
             </div>
           ))}
         </div>
 
-        <div className='rounded-xl border border-white/50 bg-white/70 backdrop-blur-md overflow-hidden shadow-sm flex flex-col min-h-[250px]'>
-          <div className='px-4 py-3 border-b border-white/30 bg-white/10 flex items-center justify-between'>
-            <h3 className='font-bold text-gray-700 text-sm flex items-center gap-2'>
+        <div className='rounded-xl border border-white/50 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur-md overflow-hidden shadow-sm flex flex-col min-h-[250px]'>
+          <div className='px-4 py-3 border-b border-white/30 dark:border-white/10 bg-white/10 dark:bg-white/5 flex items-center justify-between'>
+            <h3 className='font-bold text-gray-700 dark:text-gray-200 text-sm flex items-center gap-2'>
               <Terminal className='w-4 h-4' /> Console / Log Stream
             </h3>
-            <span className='text-[10px] bg-white/70 px-2 py-0.5 rounded text-gray-600 font-mono'>
+            <span className='text-[10px] bg-white/70 dark:bg-white/10 px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono'>
               Latest First
             </span>
           </div>
@@ -429,19 +429,19 @@ export default function MonitorView() {
                 {events.map((ev, idx) => (
                   <div
                     key={idx}
-                    className='p-3 flex gap-4 items-start hover:bg-white/70 transition-colors text-sm'
+                    className='p-3 flex gap-4 items-start hover:bg-white/70 dark:hover:bg-white/5 transition-colors text-sm'
                   >
                     <div className='w-24 shrink-0 flex flex-col'>
-                      <span className='font-mono text-xs text-gray-500'>
+                      <span className='font-mono text-xs text-gray-500 dark:text-gray-400'>
                         {new Date(ev.ts).toLocaleTimeString()}
                       </span>
                       <span
                         className={`text-[10px] font-bold mt-1 uppercase tracking-tighter truncate ${
                           ev.type.includes('error')
-                            ? 'text-red-600'
+                            ? 'text-red-600 dark:text-red-400'
                             : ev.type.includes('connect')
-                            ? 'text-emerald-600'
-                            : 'text-[#13484f]'
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-[#13484f] dark:text-gray-300'
                         }`}
                       >
                         {ev.type.replace('monitor_', '')}
@@ -450,38 +450,38 @@ export default function MonitorView() {
 
                     <div className='flex-1 min-w-0'>
                       {ev.client_id && (
-                        <div className='text-[10px] font-mono text-gray-400 mb-1 bg-black/5 inline-block px-1.5 rounded'>
+                        <div className='text-[10px] font-mono text-gray-400 dark:text-gray-500 mb-1 bg-black/5 dark:bg-white/5 inline-block px-1.5 rounded'>
                           ID: {ev.client_id.slice(-6)}
                         </div>
                       )}
 
                       {ev.type === 'monitor_user_message' ? (
-                        <div className='bg-white/70 p-2 rounded-lg border border-white/30 inline-block max-w-full'>
-                          <span className='text-xs font-bold text-gray-500 block mb-0.5'>
+                        <div className='bg-white/70 dark:bg-white/5 p-2 rounded-lg border border-white/30 dark:border-white/10 inline-block max-w-full'>
+                          <span className='text-xs font-bold text-gray-500 dark:text-gray-400 block mb-0.5'>
                             User
                           </span>
-                          <span className='text-gray-800 break-words'>
+                          <span className='text-gray-800 dark:text-gray-200 break-words'>
                             {ev.message}
                           </span>
                         </div>
                       ) : ev.type === 'monitor_reply' ? (
-                        <div className='bg-[#13484f]/10 p-2 rounded-lg border border-[#13484f]/20 inline-block max-w-full'>
-                          <span className='text-xs font-bold text-[#13484f] block mb-0.5'>
+                        <div className='bg-[#13484f]/10 dark:bg-primary/10 p-2 rounded-lg border border-[#13484f]/20 dark:border-primary/20 inline-block max-w-full'>
+                          <span className='text-xs font-bold text-[#13484f] dark:text-primary block mb-0.5'>
                             Bot Reply
                           </span>
-                          <span className='text-gray-800 break-words'>
+                          <span className='text-gray-800 dark:text-gray-200 break-words'>
                             {ev.reply ?? ev.message}
                           </span>
                         </div>
                       ) : ev.type === 'monitor_progress' ? (
-                        <div className='text-gray-600 italic flex items-center gap-2'>
+                        <div className='text-gray-600 dark:text-gray-400 italic flex items-center gap-2'>
                           <Loader2 className='w-3 h-3 animate-spin' />
                           {ev.message}
                         </div>
                       ) : ev.type === 'monitor_client_connect' ? (
-                        <div className='text-sm'>
+                        <div className='text-sm text-gray-800 dark:text-gray-200'>
                           <div className='font-medium'>Client connected</div>
-                          <div className='text-xs text-gray-500'>
+                          <div className='text-xs text-gray-500 dark:text-gray-400'>
                             {ev.user_agent
                               ? parseBrowser(ev.user_agent) +
                                 ' — ' +
@@ -490,9 +490,9 @@ export default function MonitorView() {
                           </div>
                         </div>
                       ) : ev.type === 'monitor_client_disconnect' ? (
-                        <div className='text-sm'>
+                        <div className='text-sm text-gray-800 dark:text-gray-200'>
                           <div className='font-medium'>Client disconnected</div>
-                          <div className='text-xs text-gray-500'>
+                          <div className='text-xs text-gray-500 dark:text-gray-400'>
                             {ev.user_agent
                               ? parseBrowser(ev.user_agent) +
                                 ' — ' +
@@ -501,7 +501,7 @@ export default function MonitorView() {
                           </div>
                         </div>
                       ) : (
-                        <div className='text-gray-700 break-all font-mono text-xs'>
+                        <div className='text-gray-700 dark:text-gray-300 break-all font-mono text-xs'>
                           {ev.message || JSON.stringify(ev.raw)}
                         </div>
                       )}

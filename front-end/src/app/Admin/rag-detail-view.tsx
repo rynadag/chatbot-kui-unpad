@@ -170,13 +170,13 @@ export default function RagDetailView({ onBack, onSuccess }: RagDetailViewProps)
       <div className='max-w-4xl mx-auto w-full'>
         
         {/* Header dengan style Glassmorphism */}
-        <div className='mb-6 flex justify-between items-center bg-white/40 backdrop-blur-md p-4 rounded-xl border border-white/50 shadow-sm'>
+        <div className='mb-6 flex justify-between items-center bg-white/40 dark:bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/50 dark:border-white/10 shadow-sm'>
           <div>
             <h1 className='text-3xl font-bold text-[#13484f] tracking-tight flex items-center gap-2'>
               <UploadCloud className="w-8 h-8 text-primary" />
               Upload Dokumen Cerdas
             </h1>
-            <p className='text-gray-600 mt-1 font-medium opacity-80 text-sm'>
+            <p className='text-gray-600 dark:text-gray-300 mt-1 font-medium opacity-80 text-sm'>
               Upload PDF (Jadwal, Biaya, SK), AI akan otomatis membaca, memperbaiki tabel, dan membuat backup.
             </p>
           </div>
@@ -184,7 +184,7 @@ export default function RagDetailView({ onBack, onSuccess }: RagDetailViewProps)
             onClick={onBack}
             disabled={isUploading}
             className='flex items-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-[#13484f] 
-                       glass-card hover:bg-white/40 border-white/50 shadow-sm transition-all active:scale-95 disabled:opacity-50'
+                       glass-card hover:bg-white/40 dark:hover:bg-white/15 border-white/50 dark:border-white/10 shadow-sm transition-all active:scale-95 disabled:opacity-50'
           >
             <CornerDownLeft className='w-4 h-4' />
             Batal
@@ -211,10 +211,10 @@ export default function RagDetailView({ onBack, onSuccess }: RagDetailViewProps)
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   placeholder="Contoh: Jadwal UAS Semester Genap 2025"
-                  className="w-full px-4 py-3 rounded-xl 
-                             bg-white/60 border border-white/50 
-                             text-gray-700 placeholder:text-gray-400
-                             focus:ring-2 focus:ring-primary/50 focus:border-primary/50 focus:bg-white/80
+                  className="w-full px-4 py-3 rounded-xl \
+                             bg-white/60 dark:bg-white/10 border border-white/50 dark:border-white/10 \
+                             text-gray-700 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500 \
+                             focus:ring-2 focus:ring-primary/50 focus:border-primary/50 focus:bg-white/80 dark:focus:bg-white/20 \
                              outline-none transition-all duration-200 shadow-sm backdrop-blur-sm text-sm"
                   required
                   disabled={isUploading}
@@ -240,21 +240,21 @@ export default function RagDetailView({ onBack, onSuccess }: RagDetailViewProps)
                   placeholder="Pilih atau Ketik Baru..."
                   classNames={{
                     control: (state) =>
-                      `!bg-white/60 !backdrop-blur-sm !border-white/50 !rounded-xl !shadow-none !py-1 ${
+                      `!bg-white/60 dark:!bg-white/10 !backdrop-blur-sm !border-white/50 dark:!border-white/10 !rounded-xl !shadow-none !py-1 ${
                         state.isFocused ? '!ring-2 !ring-primary/50 !border-primary/50' : ''
                       }`,
                     // PERBAIKAN DI SINI: Tambahkan !z-[9999] agar muncul paling depan
                     menu: () => 
-                      '!bg-white/90 !backdrop-blur-md !border !border-white/40 !rounded-xl !mt-2 !shadow-xl !overflow-hidden !z-[9999] relative',
+                      '!bg-white/90 dark:!bg-neutral-900 !backdrop-blur-md !border !border-white/40 dark:!border-white/10 !rounded-xl !mt-2 !shadow-xl !overflow-hidden !z-[9999] relative',
                     option: (state) =>
                       `!cursor-pointer !text-sm !py-2.5 !px-4 ${
                         state.isFocused
-                          ? '!bg-primary/10 !text-primary'
-                          : '!bg-transparent !text-gray-700 hover:!bg-white/40'
+                          ? '!bg-primary/10 dark:!bg-primary/20 !text-primary dark:!text-gray-200'
+                          : '!bg-transparent !text-gray-700 dark:!text-gray-200 hover:!bg-white/40 dark:hover:!bg-white/10'
                       }`,
-                    singleValue: () => '!text-gray-800 !text-sm !font-medium',
-                    input: () => '!text-gray-800 !text-sm',
-                    placeholder: () => '!text-gray-400 !text-sm'
+                    singleValue: () => '!text-gray-800 dark:!text-gray-200 !text-sm !font-medium',
+                    input: () => '!text-gray-800 dark:!text-gray-200 !text-sm',
+                    placeholder: () => '!text-gray-400 dark:!text-gray-500 !text-sm'
                   }}
                 />
               </div>
@@ -268,8 +268,8 @@ export default function RagDetailView({ onBack, onSuccess }: RagDetailViewProps)
               <div 
                 className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer relative group
                   ${file 
-                    ? 'border-primary bg-primary/5 shadow-inner' 
-                    : 'border-white/60 bg-white/30 hover:border-primary/50 hover:bg-white/50 shadow-sm'}`}
+                    ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-inner' 
+                    : 'border-white/60 dark:border-white/10 bg-white/30 dark:bg-white/5 hover:border-primary/50 hover:bg-white/50 dark:hover:bg-white/10 shadow-sm'}`}
               >
                 <input
                   ref={fileInputRef}
@@ -289,22 +289,22 @@ export default function RagDetailView({ onBack, onSuccess }: RagDetailViewProps)
                       <p className="font-bold text-[#13484f] text-lg">
                         Klik atau Tarik File PDF ke sini
                       </p>
-                      <p className="text-xs text-gray-500 mt-2 max-w-xs mx-auto leading-relaxed">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 max-w-xs mx-auto leading-relaxed">
                         Maksimal 10MB. Disarankan PDF berbasis teks untuk hasil pemrosesan AI yang maksimal.
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between bg-white/80 backdrop-blur-md p-5 rounded-2xl shadow-md border border-primary/30 relative z-20 animate-in zoom-in-95 duration-200">
+                  <div className="flex items-center justify-between bg-white/80 dark:bg-neutral-900 backdrop-blur-md p-5 rounded-2xl shadow-md border border-primary/30 dark:border-primary/50 relative z-20 animate-in zoom-in-95 duration-200">
                     <div className="flex items-center gap-4">
-                      <div className="p-3 bg-red-100 text-red-600 rounded-xl shadow-inner">
+                      <div className="p-3 bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl shadow-inner">
                         <FileText className="w-8 h-8" />
                       </div>
                       <div className="text-left">
-                        <p className="font-bold text-gray-800 truncate max-w-[250px] text-sm">
+                        <p className="font-bold text-gray-800 dark:text-gray-200 truncate max-w-[250px] text-sm">
                           {file.name}
                         </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                           {(file.size / 1024 / 1024).toFixed(2)} MB
                         </p>
                       </div>
@@ -327,12 +327,12 @@ export default function RagDetailView({ onBack, onSuccess }: RagDetailViewProps)
             </div>
 
             {/* 3. Info AI Box (Style Amber Glass) */}
-            <div className="bg-amber-50/40 backdrop-blur-sm border border-amber-200 rounded-2xl p-5 flex gap-4 shadow-sm">
-              <div className="p-2 bg-amber-100 rounded-lg h-fit">
-                <Wand2 className="w-5 h-5 text-amber-600 shrink-0" />
+            <div className="bg-amber-50/40 dark:bg-amber-950/20 backdrop-blur-sm border border-amber-200 dark:border-amber-900/30 rounded-2xl p-5 flex gap-4 shadow-sm">
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg h-fit">
+                <Wand2 className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
               </div>
-              <div className="text-sm text-amber-900 leading-relaxed font-medium">
-                <strong className="text-amber-700 block mb-1">Fitur AI Auto-Format:</strong> 
+              <div className="text-sm text-amber-900 dark:text-amber-200 leading-relaxed font-medium">
+                <strong className="text-amber-700 dark:text-amber-400 block mb-1">Fitur AI Auto-Format:</strong> 
                 Sistem otomatis membaca PDF Anda. Jika terdapat tabel jadwal atau daftar poin yang berantakan, AI akan menyusunnya kembali menjadi format yang rapi dan terstruktur.
               </div>
             </div>
@@ -344,8 +344,8 @@ export default function RagDetailView({ onBack, onSuccess }: RagDetailViewProps)
                 disabled={isUploading || !file}
                 className={`w-full py-4 rounded-xl font-bold text-white transition-all shadow-lg flex items-center justify-center gap-3 active:scale-[0.98]
                   ${isUploading || !file
-                    ? 'bg-gray-300 cursor-not-allowed opacity-70 shadow-none'
-                    : 'bg-gradient-to-r from-primary to-accent hover:shadow-primary/30 hover:brightness-110'
+                    ? 'bg-gray-300 dark:bg-neutral-800 text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-70 shadow-none'
+                    : 'bg-gradient-to-r from-primary to-accent hover:shadow-primary/30 hover:brightness-110 text-white'
                   }`}
               >
                 {isUploading ? (

@@ -1,5 +1,27 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-border: var(--border);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-warning: var(--warning);
+}
+
 /* ---------------------------
    THEME VARIABLES
    --------------------------- */
@@ -114,26 +136,70 @@ a {
 }
 
 /* Scrollbar halus */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 9999px;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
 }
 
-/* Custom small helpers for scrollbar appearance (non-critical) */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+/* Apply page-level overflow rules safely on html and body */
+html, body {
+  -ms-overflow-x: hidden;
+  overflow-x: hidden;
 }
 
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--ring) transparent;
+  box-sizing: border-box;
 }
 
-* {
-  -ms-overflow-x: hidden; /*IE and Edge */
-  overflow-x: hidden; /* Standard */
-  scrollbar-width: none; /* Firefox */
+/* Fix for iframe borders (like Google ReCAPTCHA) */
+iframe {
+  border: none !important;
 }
 
-/* Keep minimal resets used earlier removed to avoid conflicts */
+/* Dark Mode Overrides for Hardcoded Teal (#13484f) */
+.dark .text-\[\#13484f\] {
+  color: var(--foreground) !important;
+}
+
+.dark .text-transparent.bg-gradient-to-r.from-primary.to-accent.bg-clip-text {
+  color: transparent !important;
+}
+
+.dark .bg-\[\#13484f\] {
+  background-color: var(--primary) !important;
+}
+
+.dark .bg-\[\#13484f\]\/10 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .border-\[\#13484f\],
+.dark .border-\[\#13484f\]\/10,
+.dark .border-\[\#13484f\]\/20,
+.dark .border-\[\#13484f\]\/30,
+.dark .border-\[\#13484f\]\/40 {
+  border-color: var(--border) !important;
+}
+
+.dark .divide-\[\#13484f\]\/20 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border) !important;
+}
+
+/* Fix hardcoded black text inside dark mode content cards */
+.dark .text-black {
+  color: var(--foreground) !important;
+}
+
+.dark .text-gray-700 {
+  color: var(--muted-foreground) !important;
+}

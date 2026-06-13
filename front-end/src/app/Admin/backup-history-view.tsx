@@ -97,19 +97,19 @@ export default function BackupHistoryView({ onBack }: BackupHistoryViewProps) {
     <div className='p-4 sm:p-6 lg:p-8 h-full flex flex-col animate-in fade-in duration-300'>
       
       {/* Header Section */}
-      <header className='mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white/40 backdrop-blur-md p-6 rounded-xl border border-white/50 shadow-sm gap-4'>
+      <header className='mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white/40 dark:bg-white/5 backdrop-blur-md p-6 rounded-xl border border-white/50 dark:border-white/10 shadow-sm gap-4'>
         <div>
           <h1 className='text-2xl sm:text-3xl font-bold text-[#13484f] tracking-tight flex items-center gap-3'>
             <History className="w-8 h-8 text-primary" />
             Riwayat Backup
           </h1>
-          <p className='text-gray-600 mt-1 font-medium opacity-80 text-sm'>
+          <p className='text-gray-600 dark:text-gray-300 mt-1 font-medium opacity-80 text-sm'>
             Arsip 5 backup terakhir dari proses RAG.
           </p>
         </div>
         <button
           onClick={onBack}
-          className='flex items-center gap-2 py-2.5 px-5 rounded-xl text-sm font-semibold bg-[#13484f] text-white hover:bg-[#0f3d42] hover:shadow-lg transition-all active:scale-95'
+          className='flex items-center gap-2 py-2.5 px-5 rounded-xl text-sm font-semibold bg-[#13484f] text-white hover:bg-[#0f3d42] hover:shadow-lg dark:hover:bg-primary/20 transition-all active:scale-95 border border-transparent dark:border-white/10'
         >
           <CornerDownLeft className='w-4 h-4' />
           <span>Kembali</span>
@@ -117,10 +117,10 @@ export default function BackupHistoryView({ onBack }: BackupHistoryViewProps) {
       </header>
 
       {/* Content Area (Glass Card) */}
-      <div className='glass-card flex-1 overflow-hidden flex flex-col p-0 border border-white/40 bg-white/30 backdrop-blur-lg shadow-xl'>
+      <div className='glass-card flex-1 overflow-hidden flex flex-col p-0 border border-white/40 dark:border-white/10 bg-white/30 dark:bg-white/5 backdrop-blur-lg shadow-xl'>
         
         {/* Table Header */}
-        <div className="grid grid-cols-12 gap-4 p-4 bg-[#13484f]/10 border-b border-[#13484f]/10 font-bold text-[#13484f] text-xs uppercase tracking-wider sticky top-0 z-10">
+        <div className="grid grid-cols-12 gap-4 p-4 bg-[#13484f]/10 dark:bg-white/5 border-b border-[#13484f]/10 dark:border-white/10 font-bold text-[#13484f] dark:text-gray-200 text-xs uppercase tracking-wider sticky top-0 z-10">
           <div className="col-span-8 md:col-span-5 flex items-center gap-2">
             <FileText className="w-4 h-4" /> Nama File
           </div>
@@ -145,19 +145,19 @@ export default function BackupHistoryView({ onBack }: BackupHistoryViewProps) {
             backups.map((item) => (
               <div 
                 key={item._id}
-                className="grid grid-cols-12 gap-4 p-4 rounded-xl bg-white/40 border border-white/50 hover:bg-white/70 hover:shadow-md transition-all items-center group"
+                className="grid grid-cols-12 gap-4 p-4 rounded-xl bg-white/40 dark:bg-white/5 border border-white/50 dark:border-white/10 hover:bg-white/70 dark:hover:bg-white/10 hover:shadow-md transition-all items-center group"
               >
                 {/* 1. Filename & Size */}
                 <div className="col-span-8 md:col-span-5 overflow-hidden">
-                  <div className="font-bold text-[#13484f] text-sm truncate pr-2" title={item.filename}>
+                  <div className="font-bold text-[#13484f] dark:text-gray-100 text-sm truncate pr-2" title={item.filename}>
                     {item.filename}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] font-mono bg-[#13484f]/10 text-[#13484f] px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-mono bg-[#13484f]/10 dark:bg-white/10 text-[#13484f] dark:text-gray-300 px-2 py-0.5 rounded-md">
                       {item.size || '0 KB'}
                     </span>
                     {/* Tampilkan user di mobile only */}
-                    <span className="md:hidden text-[10px] text-gray-500 truncate">
+                    <span className="md:hidden text-[10px] text-gray-500 dark:text-gray-400 truncate">
                       by {item.triggeredBy}
                     </span>
                   </div>
@@ -170,15 +170,15 @@ export default function BackupHistoryView({ onBack }: BackupHistoryViewProps) {
                       {(item.triggeredBy || '?').charAt(0).toUpperCase()}
                    </div>
                    <div className="flex flex-col">
-                     <span className="text-sm font-semibold text-gray-700 truncate max-w-[120px]">
+                     <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 truncate max-w-[120px]">
                         {item.triggeredBy}
                      </span>
-                     <span className="text-[10px] text-gray-400">Admin</span>
+                     <span className="text-[10px] text-gray-400 dark:text-gray-500">Admin</span>
                    </div>
                 </div>
 
                 {/* 3. Date (Desktop) */}
-                <div className="hidden md:flex col-span-2 text-xs text-gray-600 font-medium">
+                <div className="hidden md:flex col-span-2 text-xs text-gray-600 dark:text-gray-400 font-medium">
                   {new Date(item.createdAt).toLocaleDateString('id-ID', {
                     day: 'numeric', month: 'short', year: 'numeric',
                     hour: '2-digit', minute: '2-digit'
@@ -193,8 +193,8 @@ export default function BackupHistoryView({ onBack }: BackupHistoryViewProps) {
                     className={`
                       flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold shadow-sm transition-all
                       ${isDownloading === item._id 
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
-                        : 'bg-white border border-primary/20 text-primary hover:bg-primary hover:text-white hover:shadow-md active:scale-95'}
+                        ? 'bg-gray-200 dark:bg-neutral-800 text-gray-500 dark:text-gray-400 cursor-not-allowed' 
+                        : 'bg-white dark:bg-white/5 border border-primary/20 text-primary dark:text-gray-200 hover:bg-primary hover:text-white dark:hover:bg-primary/20 hover:shadow-md active:scale-95'}
                     `}
                   >
                     {isDownloading === item._id ? (
@@ -209,12 +209,12 @@ export default function BackupHistoryView({ onBack }: BackupHistoryViewProps) {
             ))
           ) : (
             // Empty State
-            <div className="flex flex-col items-center justify-center h-full text-gray-400 opacity-80">
-              <div className="p-6 bg-white/50 rounded-full mb-4 shadow-sm">
-                <ServerCrash className="w-10 h-10 text-gray-400" />
+            <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 opacity-80">
+              <div className="p-6 bg-white/50 dark:bg-white/5 rounded-full mb-4 shadow-sm border border-transparent dark:border-white/10">
+                <ServerCrash className="w-10 h-10 text-gray-400 dark:text-gray-500" />
               </div>
-              <h3 className="font-bold text-gray-600 text-lg">Belum ada riwayat backup</h3>
-              <p className="text-xs mt-1 text-center max-w-xs">
+              <h3 className="font-bold text-gray-600 dark:text-gray-300 text-lg">Belum ada riwayat backup</h3>
+              <p className="text-xs mt-1 text-center max-w-xs text-gray-500 dark:text-gray-400">
                 Sistem akan otomatis membuat backup saat Anda menekan tombol <span className="font-bold">&quot;Update RAG&quot;</span> di menu Knowledge Base.
               </p>
             </div>
