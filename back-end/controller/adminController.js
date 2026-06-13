@@ -213,54 +213,31 @@ const deleteChatById = async (req, res) => {
 
 const getChatHistory = async (req, res) => {
     try {
-        const { chatId } = req.query; 
+        const { chatId } = req.query;
 
         if (!chatId) {
           return res.status(400).json({ error: true, message: "Parameter 'chatId' diperlukan" });
         }
 
-        const messages = await Message.aggregate([
-          {
-            $match: { chatId: chatId } 
-          },
-          {
-            $lookup: {
-              from: "chat", 
-              let: { chatIdString: "$chatId" },
-              pipeline: [
-                {
-                  $addFields: {
-                    _idStr: { $toString: "$_id" } 
-                  }
-                },
-                {
-                  $match: {
-                    $expr: { $eq: ["$_idStr", "$$chatIdString"] } 
-                  }
-                }
-              ],
-              as: "chatHistory"
-            }
-          },
-          { $unwind: "$chatHistory" },
-          { $sort: { createdAt: -1 } },
-          {
-            $project: {
-              msg: 1,
-              createdAt: 1,
-              chatId: 1,
-              sender: 1,
-              chatAt: "$chatHistory.createdAt"
-            }
-          }
-        ]);
-
+        // Gunakan find langsung — lebih sederhana dan tidak rawan bug join
+        const messages = await Message.find({ chatId: chatId })
+          .sort({ createdAt: -1 })
+          .select('msg createdAt chatId sender');
 
         if (messages.length === 0) {
             return res.status(404).json({ error: true, message: "Chat history tidak ditemukan" });
         }
 
-        res.status(200).json({ error: false, data: messages });
+        // Normalisasi sender: SELF -> BOT agar konsisten dengan frontend
+        const normalized = messages.map(m => ({
+          _id: m._id,
+          chatId: m.chatId,
+          msg: m.msg,
+          createdAt: m.createdAt,
+          sender: (m.sender === 'SELF') ? 'BOT' : m.sender,
+        }));
+
+        res.status(200).json({ error: false, data: normalized });
     } catch (error) {
         res.status(500).json({
             error: true,

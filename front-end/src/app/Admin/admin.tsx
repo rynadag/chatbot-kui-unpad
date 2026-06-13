@@ -48,7 +48,7 @@ interface Message {
 }
 
 interface BackendMessage {
-  sender: 'USER' | 'BOT';
+  sender: 'USER' | 'BOT' | 'SELF'; // SELF = legacy value untuk BOT
   msg: string;
   createdAt: string;
 }
@@ -387,7 +387,7 @@ const ChatHistoryView = () => {
           (msg: BackendMessage): Message => ({
             msg: msg.msg,
             createdAt: msg.createdAt,
-            sender: msg.sender === 'USER' ? 'user' : 'bot',
+            sender: msg.sender === 'USER' ? 'user' : 'bot', // handle BOT atau SELF
           })
         );
         transformedMessages.reverse();
