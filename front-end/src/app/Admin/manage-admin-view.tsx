@@ -178,7 +178,7 @@ export default function ManageAdminView({ onBack }: ManageAdminViewProps) {
       {/* Header View */}
       <header className='mb-6 flex justify-between items-center bg-white/40 dark:bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/50 dark:border-white/10 shadow-sm'>
         <div>
-          <h1 className='text-3xl font-bold text-[#13484f] tracking-tight'>
+          <h1 className='text-3xl font-bold text-[#13484f] dark:text-gray-100 tracking-tight'>
             Manajemen Admin
           </h1>
           <p className='text-gray-600 dark:text-gray-300 mt-1 font-medium opacity-80'>
@@ -187,7 +187,7 @@ export default function ManageAdminView({ onBack }: ManageAdminViewProps) {
         </div>
         <button
           onClick={onBack}
-          className='flex items-center gap-2 py-2 px-4 rounded-xl text-sm font-semibold text-[#13484f] 
+          className='flex items-center gap-2 py-2 px-4 rounded-xl text-sm font-semibold text-[#13484f] dark:text-gray-100 
                      glass-card hover:bg-white/40 dark:hover:bg-white/15 border-white/50 dark:border-white/10 shadow-sm transition-all active:scale-95'
         >
           <CornerDownLeft className='w-4 h-4' />
@@ -200,7 +200,7 @@ export default function ManageAdminView({ onBack }: ManageAdminViewProps) {
         {/* KOLOM KIRI: DAFTAR ADMIN (Glass Card) */}
         <div className='lg:col-span-1 glass-card h-full flex flex-col overflow-hidden'>
           <div className='p-4 border-b border-white/40 dark:border-white/10 bg-white/20 dark:bg-white/5 flex justify-between items-center backdrop-blur-sm'>
-            <h2 className='text-sm font-bold flex items-center gap-2 text-[#13484f] uppercase tracking-wider'>
+            <h2 className='text-sm font-bold flex items-center gap-2 text-[#13484f] dark:text-gray-100 uppercase tracking-wider'>
               <Users className='w-4 h-4' /> Daftar Admin
             </h2>
             <button 
@@ -262,7 +262,7 @@ export default function ManageAdminView({ onBack }: ManageAdminViewProps) {
             <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className='mb-8 pb-4 border-b border-white/40 dark:border-white/10 relative z-10'>
-            <h2 className='text-xl font-bold text-[#13484f] flex items-center gap-2'>
+            <h2 className='text-xl font-bold text-[#13484f] dark:text-gray-100 flex items-center gap-2'>
               {mode === 'create' ? <UserPlus className='w-6 h-6 text-primary' /> : <Key className='w-6 h-6 text-amber-500' />}
               {mode === 'create' ? 'Buat Admin Baru' : `Ganti Password: ${selectedAdmin?.username}`}
             </h2>
@@ -276,7 +276,7 @@ export default function ManageAdminView({ onBack }: ManageAdminViewProps) {
           <form onSubmit={handleSubmit} className='space-y-6 max-w-xl relative z-10'>
             {mode === 'create' && (
               <div>
-                <label className='block text-sm font-bold text-[#13484f] mb-2 pl-1'>Username</label>
+                <label className='block text-sm font-bold text-[#13484f] dark:text-gray-100 mb-2 pl-1'>Username</label>
                 <GlassInput 
                   type="text" 
                   value={username}
@@ -292,7 +292,7 @@ export default function ManageAdminView({ onBack }: ManageAdminViewProps) {
               
               {/* PASSWORD FIELD */}
               <div>
-                <label className='block text-sm font-bold text-[#13484f] mb-2 pl-1'>
+                <label className='block text-sm font-bold text-[#13484f] dark:text-gray-100 mb-2 pl-1'>
                   {mode === 'create' ? 'Password' : 'Password Baru'}
                 </label>
                 <div className="relative group">
@@ -318,7 +318,7 @@ export default function ManageAdminView({ onBack }: ManageAdminViewProps) {
 
               {/* CONFIRM PASSWORD FIELD */}
               <div>
-                <label className='block text-sm font-bold text-[#13484f] mb-2 pl-1'>
+                <label className='block text-sm font-bold text-[#13484f] dark:text-gray-100 mb-2 pl-1'>
                   Konfirmasi Password
                 </label>
                 <div className="relative group">
