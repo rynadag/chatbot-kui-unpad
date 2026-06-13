@@ -16,6 +16,7 @@ import {
   Moon,
   Languages,
   FileText,
+  LogIn,
 } from 'lucide-react';
 
 // --- LIBRARY MARKDOWN & HTML PARSER ---
@@ -849,6 +850,16 @@ export default function Chatbot() {
               ) : (
                 <Moon className="w-5 h-5" style={{ color: 'var(--foreground)' }} />
               )}
+            </button>
+            <button
+              onClick={() => {
+                const role = localStorage.getItem('role');
+                window.location.href = role ? '/Admin' : '/login';
+              }}
+              className="p-2.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all border border-transparent hover:border-border"
+              title="Admin Portal"
+            >
+              <LogIn className="w-5 h-5" style={{ color: 'var(--foreground)' }} />
             </button>
           </div>
         </header>
