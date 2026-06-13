@@ -127,7 +127,7 @@ export default function LoginPage() {
             Admin Portal
           </h1>
           <p className='text-sm text-gray-300 font-medium opacity-80'>
-            Masuk untuk mengakses dashboard KUI.
+            Masuk untuk mengakses dashboard Kantor Urusan Internasional.
           </p>
         </div>
 

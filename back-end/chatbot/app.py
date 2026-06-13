@@ -17,7 +17,7 @@ from typing import Any
 
 import rag
 
-app = FastAPI(title="KUI UNPAD Chatbot API", version="2.0.0")
+app = FastAPI(title="Kantor Urusan Internasional UNPAD Chatbot API", version="2.0.0")
 
 
 def _env_int(name: str, default: int, minimum: int = 1) -> int:
@@ -130,7 +130,7 @@ CLIENT_METADATA: dict = {}
 # =======================================================================
 @app.get("/")
 def read_root():
-    return {"status": "ok", "service": "KUI UNPAD Chatbot API"}
+    return {"status": "ok", "service": "Kantor Urusan Internasional UNPAD Chatbot API"}
 
 
 @app.get("/health")

@@ -102,7 +102,7 @@ const LANGUAGE_COPY: Record<ChatLanguage, {
 }> = {
   id: {
     initialMessage:
-      'Halo! Saya Asisten Akademik dari Kantor Internasional. Ada yang bisa saya bantu terkait informasi kampus, beasiswa, prosedur akademik, atau kebutuhan mahasiswa internasional?',
+      'Halo! Saya Asisten Akademik dari Kantor Urusan Internasional. Ada yang bisa saya bantu terkait informasi kampus, beasiswa, prosedur akademik, atau kebutuhan mahasiswa internasional?',
     languageLabel: 'Bahasa',
     languageTitle: 'Ganti bahasa respons',
     disconnected: '⚠️ Koneksi ke server terputus. Silakan refresh halaman.',
@@ -801,7 +801,7 @@ export default function Chatbot() {
             </div>
             <div>
               <h1 className='text-lg font-bold tracking-tight' style={{ color: 'var(--foreground)' }}>
-                KUI UNPAD Assistant
+                {language === 'id' ? 'Kantor Urusan Internasional UNPAD' : 'International Office UNPAD'}
               </h1>
               <p
                 className='text-xs font-medium opacity-70 flex items-center gap-1.5'

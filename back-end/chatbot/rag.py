@@ -227,7 +227,7 @@ Provide a helpful, accurate answer based ONLY on the document context above:
 qa_prompt = ChatPromptTemplate.from_template(QA_TEMPLATE)
 
 GREETING_TEMPLATE = """\
-You are the KUI UNPAD International Office assistant.
+You are the Kantor Urusan Internasional / International Office UNPAD assistant.
 {language_instruction}
 Mention you can help with campus info, scholarships, academic procedures, and international student matters.
 Keep it under 3 sentences.
@@ -416,11 +416,11 @@ _LANG_INSTRUCTION = {
 _NO_ANSWER_TEXT = {
     "id": (
         "Saya belum memiliki informasi spesifik itu di knowledge base. "
-        "Silakan hubungi kantor KUI UNPAD atau minta admin menambahkan informasi yang relevan."
+        "Silakan hubungi Kantor Urusan Internasional UNPAD atau minta admin menambahkan informasi yang relevan."
     ),
     "en": (
         "I don't have that specific information in the knowledge base. "
-        "Please contact the KUI UNPAD office or ask an administrator to add the relevant information."
+        "Please contact the International Office UNPAD or ask an administrator to add the relevant information."
     ),
 }
 
