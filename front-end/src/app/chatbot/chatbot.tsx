@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import ReCAPTCHA from 'react-google-recaptcha';
+
 import {
   Send,
   Loader2,
@@ -494,15 +494,13 @@ export default function Chatbot() {
   // ------------------------------------------------------------
   // AUTH & CAPTCHA
   // ------------------------------------------------------------
-  const createNewChatSession = async (captchaToken: string) => {
-    const consentValue = userConsent || 'false';
+  const createNewChatSession = async (consentValue: string) => {
     try {
       const res = await fetch('http://localhost:5000/api/create-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          captchaToken: captchaToken,
           consent: consentValue,
         }),
       });
@@ -532,7 +530,6 @@ export default function Chatbot() {
   }, []);
 
   const handleConsent = (hasAgreed: boolean) => {
-    setUserConsent(hasAgreed ? 'true' : 'false');
     const val = hasAgreed ? 'true' : 'false';
     setUserConsent(val);
     userConsentRef.current = val; // UPDATE REF
@@ -546,11 +543,7 @@ export default function Chatbot() {
         },
       ]);
     }
-  };
-
-  const handleCaptchaChange = (token: string | null) => {
-    if (token) createNewChatSession(token);
-    else setIsCaptchaVerified(false);
+    createNewChatSession(val);
   };
 
   // ------------------------------------------------------------
@@ -1044,23 +1037,6 @@ export default function Chatbot() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* CAPTCHA AREA */}
-        {!showConsentModal && !isCaptchaVerified && (
-          <div className='p-4 border-t flex justify-center bg-black/5 dark:bg-black/20' style={{ borderColor: 'var(--border)' }}>
-            {recaptchaSiteKey ? (
-              <ReCAPTCHA
-                sitekey={recaptchaSiteKey}
-                onChange={handleCaptchaChange}
-                theme={isDarkMode ? 'dark' : 'light'}
-              />
-            ) : (
-              <div className='flex items-center gap-2 text-amber-600 text-sm bg-amber-50/50 px-4 py-2 rounded-lg border border-amber-200'>
-                <AlertTriangle className='w-4 h-4' />
-                <span>{LANGUAGE_COPY[language].captchaMissing}</span>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* FOOTER INPUT AREA */}
         <div

@@ -118,36 +118,7 @@ const postMsg = async (req, res) => {
 
 const createChat = async (req, res) => {
   try {
-    const { captchaToken, consent } = req.body; 
-
-    if (!captchaToken) {
-      return res.status(400).json({ error: true, message: 'Verifikasi CAPTCHA diperlukan.' });
-    }
-
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-    if (!secretKey) {
-        console.error("RECAPTCHA_SECRET_KEY tidak ditemukan di file .env");
-        return res.status(500).json({ error: true, message: 'Konfigurasi server error.' });
-    }
-
-    const verificationUrl = 'https://www.google.com/recaptcha/api/siteverify';
-    
-    const params = new URLSearchParams();
-    params.append('secret', secretKey);
-    params.append('response', captchaToken);
-    
-    const verificationResponse = await axios.post(verificationUrl, params, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    });
-
-    const { success, 'error-codes': errorCodes } = verificationResponse.data;
-
-    if (!success) {
-      console.warn('Verifikasi CAPTCHA gagal:', errorCodes);
-      return res.status(401).json({ error: true, message: 'Verifikasi CAPTCHA gagal. Silakan coba lagi.' });
-    }
+    const { consent } = req.body; 
 
     if (req.session.chatId){
       setChatNonActive(req.session.chatId, req.session.consent);
@@ -170,9 +141,6 @@ const createChat = async (req, res) => {
     });
   } catch (error) {
     console.error('Error saat membuat chat:', error);
-    if (error.response) {
-      console.error('Error data from Google:', error.response.data);
-    }
     res.status(500).json({ error: 'Gagal membuat chat' });
   }
 };
