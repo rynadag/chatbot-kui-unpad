@@ -528,8 +528,8 @@ def ask_with_sources(question: str, history: Optional[list] = None, language: st
 
         return {
             "reply": content.strip(),
-            "sources": sources,
-            "source_count": len(sources),
+            "sources": [],
+            "source_count": 0,
             "search_query": search_query,
         }
 
