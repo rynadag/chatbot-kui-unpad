@@ -9,7 +9,10 @@ from contextlib import contextmanager
 from typing import Any, List, Optional
 
 from pymongo import MongoClient
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
+
+# Load .env file resolving upwards from current directory
+load_dotenv(find_dotenv(usecwd=False) or os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 # --- Langchain imports
 from langchain_core.documents import Document
@@ -41,6 +44,14 @@ GROQ_API_KEY     = os.getenv("GROQ_API_KEY")
 MONGO_URI        = os.getenv("MONGO_URI")
 MONGO_DB_NAME    = os.getenv("MONGO_DB_NAME")
 MONGO_COLLECTION = "knowledgebase"
+
+# Load unit identity from environment variables
+_UNIT_NAME   = os.getenv("PRODI_NAME") or os.getenv("UNIT_NAME", "Program Studi")
+_UNIT_SHORT  = os.getenv("PRODI_ABBREVIATION") or os.getenv("UNIT_SHORT", _UNIT_NAME)
+_UNIV_NAME   = os.getenv("UNIV_NAME", "Universitas Padjadjaran")
+_UNIV_SHORT  = os.getenv("UNIV_ABBREVIATION", "Unpad")
+_HELPDESK    = os.getenv("HELPDESK_CONTACT", "admin unit")
+_UNIT_FULL   = f"{_UNIT_NAME} {_UNIV_NAME}"
 
 BASE_DIR     = os.path.dirname(os.path.abspath(__file__))
 PERSIST_DIR  = os.getenv("CHROMA_PERSIST_DIR", os.path.join(BASE_DIR, "chroma_db"))
@@ -196,15 +207,15 @@ def smart_clean_text(raw_text: str) -> str:
 # =======================================================================
 # PROMPTS (IMPROVED FOR ACCURACY)
 # =======================================================================
-QA_TEMPLATE = """\
-You are the **International Student AI Assistant for Universitas Padjadjaran (UNPAD)**.
+QA_TEMPLATE = f"""\
+You are the **AI Assistant for {_UNIT_FULL}**.
 Persona: professional, warm, concise, and academically accurate.
 
 STRICT RULES:
 1. Answer ONLY using the DOCUMENT CONTEXT below. NEVER make up information.
 2. If the context does NOT contain enough information to answer fully, say this instead of guessing:
-   {no_answer_text}
-3. LANGUAGE RULE (WAJIB DIIKUTI): {language_instruction}
+   {{no_answer_text}}
+3. LANGUAGE RULE (WAJIB DIIKUTI): {{language_instruction}}
 4. Use Markdown formatting: **bold**, bullet points, tables where appropriate.
 5. Be concise and structured. Avoid unnecessary filler.
 6. When citing information, mention the source topic naturally.
@@ -214,25 +225,26 @@ STRICT RULES:
 10. Do NOT add a "Sources" or "Sumber" section. The app displays sources separately.
 
 PREVIOUS CONVERSATION (for context continuity):
-{chat_history}
+{{chat_history}}
 
 DOCUMENT CONTEXT (your ONLY source of truth):
-{context}
+{{context}}
 
 USER QUESTION:
-{question}
+{{question}}
 
 Provide a helpful, accurate answer based ONLY on the document context above:
 """
 qa_prompt = ChatPromptTemplate.from_template(QA_TEMPLATE)
 
-GREETING_TEMPLATE = """\
-You are the Kantor Urusan Internasional / International Office UNPAD assistant.
-{language_instruction}
-Mention you can help with campus info, scholarships, academic procedures, and international student matters.
+
+GREETING_TEMPLATE = f"""\
+You are the AI assistant for {_UNIT_FULL}.
+{{language_instruction}}
+Mention you can help with information, academic procedures, and matters related to {_UNIT_NAME}.
 Keep it under 3 sentences.
 
-User greeting: {question}
+User greeting: {{question}}
 """
 greeting_prompt = ChatPromptTemplate.from_template(GREETING_TEMPLATE)
 
@@ -416,11 +428,11 @@ _LANG_INSTRUCTION = {
 _NO_ANSWER_TEXT = {
     "id": (
         "Saya belum memiliki informasi spesifik itu di knowledge base. "
-        "Silakan hubungi Kantor Urusan Internasional UNPAD atau minta admin menambahkan informasi yang relevan."
+        f"Silakan hubungi {_HELPDESK} atau minta admin menambahkan informasi yang relevan."
     ),
     "en": (
         "I don't have that specific information in the knowledge base. "
-        "Please contact the International Office UNPAD or ask an administrator to add the relevant information."
+        f"Please contact {_HELPDESK} or ask an administrator to add the relevant information."
     ),
 }
 

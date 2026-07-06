@@ -6,6 +6,7 @@ import os
 import json
 import asyncio
 from datetime import datetime
+from dotenv import load_dotenv, find_dotenv
 from pymongo import MongoClient
 from bson import ObjectId
 import concurrent.futures
@@ -15,9 +16,19 @@ import uuid
 import pdfplumber
 from typing import Any
 
+# Load environment variables before importing rag.py to ensure they are available
+load_dotenv(
+    find_dotenv(usecwd=False) or
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
+)
+
 import rag
 
-app = FastAPI(title="Kantor Urusan Internasional UNPAD Chatbot API", version="2.0.0")
+_UNIT_NAME  = os.getenv("PRODI_NAME") or os.getenv("UNIT_NAME", "Program Studi")
+_UNIV_SHORT = os.getenv("UNIV_ABBREVIATION", "Unpad")
+_APP_TITLE   = f"{_UNIT_NAME} {_UNIV_SHORT} Chatbot API"
+
+app = FastAPI(title=_APP_TITLE, version="2.0.0")
 
 
 def _env_int(name: str, default: int, minimum: int = 1) -> int:
@@ -130,7 +141,7 @@ CLIENT_METADATA: dict = {}
 # =======================================================================
 @app.get("/")
 def read_root():
-    return {"status": "ok", "service": "Kantor Urusan Internasional UNPAD Chatbot API"}
+    return {"status": "ok", "service": _APP_TITLE}
 
 
 @app.get("/health")
@@ -595,5 +606,6 @@ def reset_memory_route():
 # =======================================================================
 if __name__ == "__main__":
     import uvicorn
-    print("🚀 Starting Server (WS Port 8080)...")
-    uvicorn.run(app, host="127.0.0.1", port=8080)
+    port = int(os.getenv("PORT", 5000))
+    print(f"🚀 Starting Server (Port {port})...")
+    uvicorn.run(app, host="0.0.0.0", port=port)
