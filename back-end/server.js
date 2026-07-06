@@ -61,6 +61,13 @@ app.get('/', (req, res) => {
   res.send('Server running...');
 });
 
+app.get(["/health", "/api/health"], (_req, res) => {
+    res.json({
+        status:    "ok",
+        uptime:    Math.round(process.uptime()) + "s"
+    });
+});
+
 // ========================
 // HEARTBEAT
 // ========================
