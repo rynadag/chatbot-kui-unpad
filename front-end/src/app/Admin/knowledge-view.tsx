@@ -559,7 +559,7 @@ export default function KnowledgeView({ onBack }: KnowledgeViewProps) {
         const errData = await backupRes.json();
         throw new Error(errData.message || 'Gagal membuat backup otomatis.');
       }
-      const ragRes = await fetch('http://localhost:5000/do-rag');
+      const ragRes = await fetch('http://localhost:8080/do-rag');
       if (!ragRes.ok) throw new Error('Proses RAG gagal di server AI.');
 
       // TERAPKAN TIPE DATA DI SINI:

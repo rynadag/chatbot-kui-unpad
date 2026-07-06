@@ -64,7 +64,7 @@ export default function MonitorView() {
   useEffect(() => {
     let ws: WebSocket | null = null;
     try {
-      ws = new WebSocket('ws://localhost:5000/ws-monitor');
+      ws = new WebSocket('ws://localhost:8080/ws-monitor');
       wsRef.current = ws;
     } catch (err: unknown) {
       setSocketError(String(err || 'Failed to create WebSocket'));

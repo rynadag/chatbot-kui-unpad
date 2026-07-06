@@ -244,7 +244,7 @@ const AdminSidebar = ({
               Admin Panel
             </h1>
             <p className='text-[10px] text-gray-500 font-medium tracking-wider uppercase opacity-80'>
-              University Dashboard
+              DASHBOARD KANTOR URUSAN INTERNASIONAL
             </p>
           </div>
         ) : (
@@ -880,7 +880,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     let ws: WebSocket | null = null;
     try {
-      ws = new WebSocket('ws://localhost:5000/ws-monitor');
+      ws = new WebSocket('ws://localhost:8080/ws-monitor');
 
       ws.onopen = () => {
         console.log('🔔 Connected to monitor socket');
