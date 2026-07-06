@@ -111,7 +111,7 @@ export default function RagDetailView({ onBack, onSuccess }: RagDetailViewProps)
       // STEP 1: Upload ke Python AI (Save + Indexing)
       setUploadStep('AI sedang membaca & merapikan format PDF...');
       
-      const response = await fetch('http://localhost:8080/api/upload-knowledge', {
+      const response = await fetch('http://localhost:5000/api/upload-knowledge', {
         method: 'POST',
         body: formData,
       });

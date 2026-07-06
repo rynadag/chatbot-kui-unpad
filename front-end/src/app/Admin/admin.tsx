@@ -880,7 +880,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     let ws: WebSocket | null = null;
     try {
-      ws = new WebSocket('ws://localhost:8080/ws-monitor');
+      ws = new WebSocket('ws://localhost:5000/ws-monitor');
 
       ws.onopen = () => {
         console.log('🔔 Connected to monitor socket');

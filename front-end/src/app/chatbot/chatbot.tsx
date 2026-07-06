@@ -277,7 +277,7 @@ export default function Chatbot() {
   // WEBSOCKET (DIPERBAIKI)
   // ------------------------------------------------------------
   useEffect(() => {
-    const socket = new WebSocket('ws://localhost:8080/ws');
+    const socket = new WebSocket('ws://localhost:5000/ws');
 
     socket.onopen = () => {
       console.log('✅ Connected to AI Server (WS)');
@@ -446,7 +446,7 @@ export default function Chatbot() {
   // WEBSOCKET
   // ------------------------------------------------------------
   // useEffect(() => {
-  //   const socket = new WebSocket('ws://localhost:8080/ws');
+  //   const socket = new WebSocket('ws://localhost:5000/ws');
 
   //   socket.onopen = () => {
   //     console.log('✅ Connected to AI Server (WS)');
